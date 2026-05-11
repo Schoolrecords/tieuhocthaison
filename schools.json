@@ -35,12 +35,12 @@
       "shortName": "TH Thái Sơn",
       "xa": "Đô Lương",
       "tinh": "Nghệ An",
-      "apiUrl": "",
+      "apiUrl": "https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec",
       "primaryColor": "#0d9488",
       "logo": "",
       "active": true,
       "createdAt": "2026-05-11",
-      "note": "Trường đầu tiên chạy trên kiến trúc D. Thầy cần tạo Sheet HSS_TH_ThaiSon + Apps Script → paste URL /exec vào apiUrl ở trên."
+      "note": "Kích hoạt lần đầu: 2026-05-11. Apps Script project: HSS_TH_ThaiSon_Backend."
     }
   ]
 }
