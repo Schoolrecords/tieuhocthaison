@@ -1586,6 +1586,8 @@ function _populateSheet(ss) {
   s2.setRowHeight(1, 40);
   [50, 200, 110, 170, 110, 130, 220, 280].forEach(function(w, i){ s2.setColumnWidth(i+1, w); });
   s2.setFrozenRows(1);
+  // Cột F (SĐT) định dạng text — bảo vệ số 0 đầu không bị Sheets nuốt
+  s2.getRange(2, 6, Math.max(s2.getMaxRows() - 1, 500), 1).setNumberFormat('@');
   if (DATA_DSGV.length) s2.getRange(2, 1, DATA_DSGV.length, 8).setValues(DATA_DSGV);
 
   // -------- Sheet 3: DS HocSinh --------
@@ -1618,6 +1620,8 @@ function _populateSheet(ss) {
   [50,160,130,200,110,80,90,90,150,40,150,200,220,130,180,120,180,120,
    80,110,180,110,180,200].forEach(function(w, i){ s3.setColumnWidth(i+1, w); });
   s3.setFrozenRows(1);
+  // Cột N (Số điện thoại phụ huynh) định dạng text — bảo vệ số 0 đầu
+  s3.getRange(2, 14, Math.max(s3.getMaxRows() - 1, 1000), 1).setNumberFormat('@');
   if (DATA_HS.length) s3.getRange(2, 1, DATA_HS.length, 18).setValues(DATA_HS);
 
   // -------- Sheet 4: Hinh Anh --------
@@ -2243,7 +2247,7 @@ function _hssListStudentsAdmin(filter) {
       ns: fmt(r[4]), gt: fmt(r[5]),
       dan_toc: fmt(r[6]), ton_giao: fmt(r[7]),
       tinh: fmt(r[8]), xa: fmt(r[10]), to: fmt(r[11]),
-      noi_sinh: fmt(r[12]), sdt: fmt(r[13]),
+      noi_sinh: fmt(r[12]), sdt: _normVnPhone_(r[13]),
       cha: fmt(r[14]), namsinh_cha: fmt(r[15]),
       me: fmt(r[16]), namsinh_me: fmt(r[17]),
       is_deleted: r[18] === true,
@@ -2286,7 +2290,14 @@ function _writeConfig(config) {
     var key = String(row[0] || '').trim();
     existingKeys[key] = i + 2;
     if (map.hasOwnProperty(key) && map[key] !== '') {
-      sh.getRange(i + 2, 2).setValue(map[key]);
+      var cell = sh.getRange(i + 2, 2);
+      // Điện thoại → ép format text để bảo vệ số 0 đầu
+      if (key === 'Điện thoại') {
+        cell.setNumberFormat('@');
+        cell.setValue(_normVnPhone_(map[key]));
+      } else {
+        cell.setValue(map[key]);
+      }
       updated++;
     }
   });
@@ -2301,6 +2312,10 @@ function _writeConfig(config) {
     sh.getRange(sh.getLastRow() + 1, 1, newRows.length, 2).setValues(newRows);
     updated += newRows.length;
   }
+  // Rename Spreadsheet với icon prefix nếu Tên trường được cập nhật
+  if (config.name) _renameSpreadsheetWithIcon_(ss, config.name);
+  // Invalidate cache để FE đọc ngay cấu hình mới
+  try { CacheService.getScriptCache().remove('allData'); } catch(e){}
   return { updated: updated };
 }
 
@@ -2377,7 +2392,7 @@ function _saveSchoolConfig_(body) {
   var pairs = {
     'Tên trường':       body.name,
     'Địa chỉ':          addr,
-    'Điện thoại':       body.phone || '',
+    'Điện thoại':       _normVnPhone_(body.phone || ''),
     'Email':            body.email || '',
     'Năm học':          body.namHoc || '2025-2026',
     'Hiệu trưởng':      body.hieuTruong || '',
@@ -2410,13 +2425,25 @@ function _saveSchoolConfig_(body) {
   Object.keys(pairs).forEach(function (key) {
     var val = pairs[key];
     if (rowIndexByKey[key]) {
-      sh.getRange(rowIndexByKey[key], 2).setValue(val);
+      var cell = sh.getRange(rowIndexByKey[key], 2);
+      if (key === 'Điện thoại') cell.setNumberFormat('@');
+      cell.setValue(val);
       updated++;
     } else {
       sh.appendRow([key, val]);
+      if (key === 'Điện thoại') {
+        sh.getRange(sh.getLastRow(), 2).setNumberFormat('@').setValue(val);
+      }
       added++;
     }
   });
+
+  // Rename Spreadsheet với icon prefix "📊 " để dễ phân biệt trong Drive
+  _renameSpreadsheetWithIcon_(ss, body.name);
+
+  // Invalidate cache để reload trang đọc ngay cấu hình mới (tránh wizard hiện lại
+  // khi cache TTL chưa hết).
+  try { CacheService.getScriptCache().remove('allData'); } catch(e){}
 
   // Bootstrap Drive folder cho instance mới (idempotent)
   try {
@@ -2512,6 +2539,47 @@ function _getSS() {
   return ss;
 }
 
+/**
+ * Chuẩn hoá SĐT Việt Nam — phục hồi số 0 đầu nếu bị Sheets nuốt
+ * (Sheet hay tự coi "0987..." là number → mất chữ số 0 đầu).
+ *  - "+84xxxxxxxxx" / "84xxxxxxxxx" → "0xxxxxxxxx"
+ *  - 9 chữ số (mobile thiếu 0) → "0" + nó
+ *  - 10 chữ số bắt đầu khác 0 (landline thiếu 0, vd "2386...") → "0" + nó
+ *  - Đã đúng (bắt đầu bằng 0) hoặc chuỗi không phải SĐT thuần → giữ nguyên.
+ */
+function _normVnPhone_(val) {
+  if (val == null || val === '') return '';
+  var s = String(val).trim();
+  if (!s) return '';
+  // Bỏ space/-/./()
+  var d = s.replace(/[\s\-.()]/g, '');
+  // +84 / 84 prefix → 0
+  if (/^\+?84\d{9,10}$/.test(d)) {
+    return '0' + d.replace(/^\+?84/, '');
+  }
+  // Chỉ xử lý chuỗi gồm toàn chữ số (không động vào "0912 abc def" hay chuỗi pha tạp)
+  if (/^\d+$/.test(d)) {
+    if (d.charAt(0) === '0') return d;             // đã đúng
+    if (d.length === 9 || d.length === 10) return '0' + d; // thiếu 0 đầu
+  }
+  return s;  // không nhận dạng được → trả nguyên (giữ trải nghiệm cũ)
+}
+
+/**
+ * Đổi tên Spreadsheet với icon prefix "📊 " để dễ phân biệt
+ * với các Sheet khác trong Drive (idempotent — chạy nhiều lần ok).
+ */
+function _renameSpreadsheetWithIcon_(ss, schoolName) {
+  if (!ss || !schoolName) return;
+  try {
+    var ICON = '📊';
+    var wanted = ICON + ' ' + String(schoolName).trim();
+    if (ss.getName() !== wanted) ss.rename(wanted);
+  } catch (e) {
+    Logger.log('Rename Spreadsheet lỗi (không fatal): ' + e);
+  }
+}
+
 // =====================================================================================
 // ==========                       CÁC HÀM ĐỌC DATA                           =========
 // =====================================================================================
@@ -2563,7 +2631,7 @@ function getTeachers() {
     return {
       tt: r[0], name: String(r[1]).trim(), dob: dob,
       role: String(r[3] || '').trim(), degree: String(r[4] || '').trim(),
-      phone: String(r[5] || '').trim(), email: String(r[6] || '').trim(),
+      phone: _normVnPhone_(r[5]), email: String(r[6] || '').trim(),
       link: String(r[7] || '').trim()
     };
   });
@@ -2640,7 +2708,7 @@ function getStudents(opts) {
       if (fullAccess) {
         out.hamlet     = String(r[11] || '').trim();
         out.birthplace = String(r[12] || '').trim();
-        out.phone      = String(r[13] || '').trim();
+        out.phone      = _normVnPhone_(r[13]);
         out.father     = String(r[14] || '').trim();
         out.fatherYear = String(r[15] || '').trim();
         out.mother     = String(r[16] || '').trim();
@@ -2853,7 +2921,7 @@ function getConfig() {
   return {
     name:           map['Tên trường']      || SCHOOL_CONFIG.name,
     address:        map['Địa chỉ']         || SCHOOL_CONFIG.address,
-    phone:          map['Điện thoại']      || SCHOOL_CONFIG.phone,
+    phone:          _normVnPhone_(map['Điện thoại']) || SCHOOL_CONFIG.phone,
     email:          map['Email']           || SCHOOL_CONFIG.email,
     schoolYear:     map['Năm học']         || SCHOOL_CONFIG.schoolYear,
     principal:      map['Hiệu trưởng']     || SCHOOL_CONFIG.principal     || '',

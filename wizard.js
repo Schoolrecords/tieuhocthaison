@@ -78,7 +78,13 @@
 
   function needsWizard(data) {
     if (!data) return true;
-    var cfg = data.config || data.data && data.data.config;
+    // Response từ _hssDoGet luôn dạng {ok, data: {...}}. getAllData() lồng config
+    // trong data.stats.config, KHÔNG phải data.config. Trước đây check sai path
+    // nên wizard luôn hiện lại dù đã setup → 2026-05-12 fix.
+    if (data.ok === false) return true;
+    var root = (data && data.data) ? data.data : data;
+    var cfg = (root && root.stats && root.stats.config) ||
+              (root && root.config) || null;
     if (!cfg) return true;
     var nameStr = cfg.name || cfg['Tên trường'] || '';
     return !nameStr || String(nameStr).trim() === '';
