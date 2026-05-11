@@ -2566,6 +2566,126 @@ function _normVnPhone_(val) {
 }
 
 /**
+ * HOTFIX 2026-05-12 — Chạy 1 lần ở Apps Script editor.
+ * Áp dụng các sửa đổi retroactive cho trường đã setup từ trước:
+ *   1. Format cột SĐT (DSGV/F, DS HocSinh/N, CauHinh) thành text `@`
+ *   2. Phục hồi số 0 đầu SĐT đã bị Sheets nuốt (đọc → chuẩn hoá → ghi lại)
+ *   3. Rename Spreadsheet thành "📊 + Tên trường"
+ *   4. Xoá cache để FE đọc data mới ngay
+ * Idempotent — chạy nhiều lần không hỏng dữ liệu.
+ *
+ * Cách chạy:
+ *   Apps Script editor → chọn hàm "applyHotfix_2026_05_12" → Run
+ *   → Xem log (View → Logs) để kiểm tra kết quả
+ */
+function applyHotfix_2026_05_12() {
+  var ss = _getSS();
+  var report = { dsgv: 0, hocsinh: 0, cauhinh: 0, renamed: false };
+
+  // ── (1) DSGV: cột F (SĐT) ─────────────────────────────────────
+  var s2 = ss.getSheetByName(SHEET_DSGV);
+  if (s2) {
+    s2.getRange(2, 6, Math.max(s2.getMaxRows() - 1, 500), 1).setNumberFormat('@');
+    var n2 = s2.getLastRow() - 1;
+    if (n2 > 0) {
+      var rng2 = s2.getRange(2, 6, n2, 1);
+      var vals2 = rng2.getValues();
+      var changed2 = false;
+      for (var i = 0; i < vals2.length; i++) {
+        var fixed = _normVnPhone_(vals2[i][0]);
+        if (String(vals2[i][0]) !== fixed) {
+          vals2[i][0] = fixed;
+          changed2 = true;
+          report.dsgv++;
+        }
+      }
+      if (changed2) rng2.setValues(vals2);
+    }
+    Logger.log('✅ DSGV cột F: format text @, phục hồi ' + report.dsgv + ' SĐT');
+  } else {
+    Logger.log('⚠ Không tìm thấy tab DSGV');
+  }
+
+  // ── (2) DS HocSinh: cột N (SĐT phụ huynh) ─────────────────────
+  var s3 = ss.getSheetByName(SHEET_HS);
+  if (s3) {
+    s3.getRange(2, 14, Math.max(s3.getMaxRows() - 1, 1000), 1).setNumberFormat('@');
+    var n3 = s3.getLastRow() - 1;
+    if (n3 > 0) {
+      var rng3 = s3.getRange(2, 14, n3, 1);
+      var vals3 = rng3.getValues();
+      var changed3 = false;
+      for (var j = 0; j < vals3.length; j++) {
+        var fix3 = _normVnPhone_(vals3[j][0]);
+        if (String(vals3[j][0]) !== fix3) {
+          vals3[j][0] = fix3;
+          changed3 = true;
+          report.hocsinh++;
+        }
+      }
+      if (changed3) rng3.setValues(vals3);
+    }
+    Logger.log('✅ DS HocSinh cột N: format text @, phục hồi ' + report.hocsinh + ' SĐT');
+  } else {
+    Logger.log('⚠ Không tìm thấy tab DS HocSinh');
+  }
+
+  // ── (3) CauHinh: ô "Điện thoại" ───────────────────────────────
+  var s5 = ss.getSheetByName(SHEET_CFG);
+  var schoolName = '';
+  if (s5 && s5.getLastRow() >= 2) {
+    var cfgData = s5.getRange(2, 1, s5.getLastRow() - 1, 2).getValues();
+    for (var k = 0; k < cfgData.length; k++) {
+      var key = String(cfgData[k][0] || '').trim();
+      if (key === 'Tên trường') schoolName = String(cfgData[k][1] || '').trim();
+      if (key === 'Điện thoại') {
+        var cell = s5.getRange(k + 2, 2);
+        cell.setNumberFormat('@');
+        var oldVal = String(cfgData[k][1] || '').trim();
+        var newVal = _normVnPhone_(oldVal);
+        if (oldVal !== newVal) {
+          cell.setValue(newVal);
+          report.cauhinh = 1;
+        }
+      }
+    }
+    Logger.log('✅ CauHinh ô "Điện thoại": format text @' +
+               (report.cauhinh ? ', phục hồi số 0' : ', không cần phục hồi'));
+  }
+
+  // ── (4) Rename Spreadsheet "📊 + Tên trường" ──────────────────
+  if (schoolName) {
+    var oldName = ss.getName();
+    _renameSpreadsheetWithIcon_(ss, schoolName);
+    if (ss.getName() !== oldName) {
+      report.renamed = true;
+      Logger.log('✅ Đã đổi tên Spreadsheet: "' + oldName + '" → "' + ss.getName() + '"');
+    } else {
+      Logger.log('ℹ Spreadsheet đã đúng tên: "' + oldName + '"');
+    }
+  } else {
+    Logger.log('⚠ CauHinh chưa có "Tên trường" → bỏ qua rename');
+  }
+
+  // ── (5) Clear cache ───────────────────────────────────────────
+  try {
+    CacheService.getScriptCache().remove('allData');
+    Logger.log('✅ Đã xoá cache allData');
+  } catch (e) {
+    Logger.log('⚠ Lỗi xoá cache: ' + e);
+  }
+
+  _logDivider();
+  Logger.log('🎉 HOTFIX HOÀN TẤT');
+  Logger.log('   DSGV phục hồi SĐT:     ' + report.dsgv);
+  Logger.log('   DS HocSinh phục hồi:   ' + report.hocsinh);
+  Logger.log('   CauHinh phục hồi:      ' + (report.cauhinh ? '1' : '0'));
+  Logger.log('   Spreadsheet renamed:   ' + (report.renamed ? 'Có' : 'Không (đã đúng tên)'));
+  _logDivider();
+  return report;
+}
+
+/**
  * Đổi tên Spreadsheet với icon prefix "📊 " để dễ phân biệt
  * với các Sheet khác trong Drive (idempotent — chạy nhiều lần ok).
  */
