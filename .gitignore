@@ -1,0 +1,35 @@
+# Claude Code local config (chứa allowlist & path máy local)
+.claude/settings.local.json
+
+# Backup folders trong templates-hocba (chỉ giữ template chính)
+templates-hocba/_backup-*
+templates-hocba/_build/_*
+
+# Editor/OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Backup file lung tung
+*.bak
+*.bak.*
+*.tmp
+*.orig
+
+# Node modules (nếu sau này dùng clasp)
+node_modules/
+.clasprc.json
+.clasp.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS thumbnail
+*.JPG~
+*.jpg~

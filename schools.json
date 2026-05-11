@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-05-11",
+  "defaultSchool": "",
+  "_comment": "Registry trường tham gia hệ thống Hồ sơ số. Mỗi trường 1 entry. Thầy điền apiUrl sau khi deploy Apps Script. Trường nào active:false sẽ không hiện trong picker.",
+  "_schema": {
+    "code": "Mã trường viết liền, không dấu, lowercase (vd: thaison, dienlien)",
+    "name": "Tên đầy đủ: Trường Tiểu học XYZ",
+    "shortName": "Tên ngắn: TH XYZ",
+    "xa": "Tên xã/phường (chỉ tên, không kèm 'Xã')",
+    "tinh": "Tên tỉnh (không kèm 'Tỉnh')",
+    "apiUrl": "URL Apps Script deploy: https://script.google.com/macros/s/.../exec — bắt buộc",
+    "primaryColor": "Mã hex màu chủ đạo (theme), vd: #1e3a8a (xanh navy)",
+    "logo": "Đường dẫn logo trong repo, vd: logos/thaison.png (optional)",
+    "active": "true/false — false sẽ ẩn khỏi picker",
+    "createdAt": "YYYY-MM-DD"
+  },
+  "schools": [
+    {
+      "code": "dienlien",
+      "name": "Trường Tiểu học Diễn Liên",
+      "shortName": "TH Diễn Liên",
+      "xa": "Quảng Châu",
+      "tinh": "Nghệ An",
+      "apiUrl": "",
+      "primaryColor": "#1e3a8a",
+      "logo": "",
+      "active": false,
+      "createdAt": "2025-09-01",
+      "note": "Apps Script URL CŨ của Diễn Liên: https://script.google.com/macros/s/AKfycbxS-M_WE3zkT7gR5kIuyka1DOOpGfgPCJInnpplpsik_RRfBQ6ULUDA9l8xlTVNgU_y/exec — thầy paste vào apiUrl khi muốn active"
+    },
+    {
+      "code": "thaison",
+      "name": "Trường Tiểu học Thái Sơn",
+      "shortName": "TH Thái Sơn",
+      "xa": "Đô Lương",
+      "tinh": "Nghệ An",
+      "apiUrl": "",
+      "primaryColor": "#0d9488",
+      "logo": "",
+      "active": true,
+      "createdAt": "2026-05-11",
+      "note": "Trường đầu tiên chạy trên kiến trúc D. Thầy cần tạo Sheet HSS_TH_ThaiSon + Apps Script → paste URL /exec vào apiUrl ở trên."
+    }
+  ]
+}
