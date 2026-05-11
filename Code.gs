@@ -614,12 +614,10 @@ const AUTH_TOKEN_ADMIN_FALLBACK = '';  // Để rỗng = từ chối admin login
 
 function _getAuthTokenGV_()    { var c = _getCfgMap_(); return (c && c.auth_token_gv)    || AUTH_TOKEN_GV_FALLBACK; }
 function _getAuthTokenAdmin_() { var c = _getCfgMap_(); return (c && c.auth_token_admin) || AUTH_TOKEN_ADMIN_FALLBACK; }
-
-// Backward-compat: code cũ tham chiếu trực tiếp 2 const dưới — dùng getter để
-// luôn lấy giá trị mới nhất từ Sheet. Object.defineProperty đảm bảo const → dynamic.
-var AUTH_TOKEN_GV, AUTH_TOKEN_ADMIN;
-Object.defineProperty(this, 'AUTH_TOKEN_GV',    { get: _getAuthTokenGV_,    configurable: true });
-Object.defineProperty(this, 'AUTH_TOKEN_ADMIN', { get: _getAuthTokenAdmin_, configurable: true });
+// Lưu ý: trước đây có dùng `var AUTH_TOKEN_GV; Object.defineProperty(this, 'AUTH_TOKEN_GV', ...)`
+// để giả lập "const động". Apps Script V8 runtime KHÔNG cho phép redefine biến `var`
+// ở global (non-configurable) → ném TypeError ngay khi load file. Đã gỡ bỏ trick này.
+// Mọi nơi cần đọc 2 mã → gọi trực tiếp _getAuthTokenGV_() / _getAuthTokenAdmin_().
 // ----------------------------------------------------------------------------
 //
 // 4 helper an toàn được gọi từ doPost và các hàm save:
@@ -695,8 +693,8 @@ function _getAuthTokens_() {
     propGV    = props.getProperty('AUTH_TOKEN_GV')    || '';
     propAdmin = props.getProperty('AUTH_TOKEN_ADMIN') || '';
   } catch (e) { /* ignore */ }
-  const tokGV    = propGV    || ((typeof AUTH_TOKEN_GV    === 'string') ? AUTH_TOKEN_GV    : '');
-  const tokAdmin = propAdmin || ((typeof AUTH_TOKEN_ADMIN === 'string') ? AUTH_TOKEN_ADMIN : '');
+  const tokGV    = propGV    || _getAuthTokenGV_();
+  const tokAdmin = propAdmin || _getAuthTokenAdmin_();
   return { tokGV: tokGV, tokAdmin: tokAdmin };
 }
 
@@ -4075,9 +4073,9 @@ function _getDriveRootName_() {
   if (c.school_code) return 'HoSoSo_' + String(c.school_code).replace(/[^a-zA-Z0-9_-]/g, '');
   return 'HoSoSo';  // fallback chung — khuyến nghị set qua wizard
 }
-// Backward-compat const (dynamic getter):
-var _DRIVE_ROOT_NAME;
-Object.defineProperty(this, '_DRIVE_ROOT_NAME', { get: _getDriveRootName_, configurable: true });
+// Lưu ý: KHÔNG dùng `var _DRIVE_ROOT_NAME; Object.defineProperty(this, ...)` — Apps Script V8
+// runtime tạo property non-configurable từ `var` ở global nên defineProperty ném TypeError.
+// Mọi nơi cần giá trị → gọi trực tiếp _getDriveRootName_().
 
 /**
  * Bootstrap cấu trúc folder Drive theo namHoc, ID lưu vào Config.
@@ -4117,7 +4115,7 @@ function _ensureDriveFolders_(namHoc) {
     return created;
   }
 
-  const root       = _resolveOrCreate('DRIVE_ROOT_FOLDER_ID', function(){ return DriveApp.getRootFolder(); }, _DRIVE_ROOT_NAME);
+  const root       = _resolveOrCreate('DRIVE_ROOT_FOLDER_ID', function(){ return DriveApp.getRootFolder(); }, _getDriveRootName_());
   const yearFolder = _findOrCreateFolder_(root, namHoc);
   const chuKy      = _resolveOrCreate('SIGNATURE_FOLDER_ID',  function(){ return yearFolder; }, 'ChuKy');
   const chuKyGVCN  = _findOrCreateFolder_(chuKy, 'ChuKy_GVCN');
