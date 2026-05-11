@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" font-family="Segoe UI, Be Vietnam Pro, sans-serif">
+  <rect width="900" height="560" fill="#f8fafc"/>
+  <text x="450" y="32" font-size="20" font-weight="700" fill="#1e3a8a" text-anchor="middle">BƯỚC 5: WIZARD 4 BƯỚC TRÊN WEB</text>
+  <text x="450" y="54" font-size="12" fill="#64748b" text-anchor="middle">Mở URL: schoolrecords.github.io/hsstieuhoc/?school=thaison → Wizard tự hiện</text>
+
+  <!-- 4 Step cards -->
+  <g>
+    <rect x="40" y="80" width="200" height="220" rx="10" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="60" cy="105" r="18" fill="#1e3a8a"/>
+    <text x="60" y="110" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">1</text>
+    <text x="90" y="103" font-size="13" font-weight="700" fill="#1e3a8a">THÔNG TIN</text>
+    <text x="90" y="117" font-size="13" font-weight="700" fill="#1e3a8a">TRƯỜNG</text>
+    <line x1="50" y1="135" x2="230" y2="135" stroke="#e2e8f0"/>
+    <text x="55" y="155" font-size="11" fill="#0f172a">✓ Tên trường</text>
+    <text x="55" y="172" font-size="11" fill="#0f172a">✓ Xã / Tỉnh</text>
+    <text x="55" y="189" font-size="11" fill="#0f172a">✓ Địa chỉ đầy đủ</text>
+    <text x="55" y="206" font-size="11" fill="#0f172a">✓ Năm học</text>
+    <text x="55" y="223" font-size="11" fill="#0f172a">✓ Màu chủ đạo</text>
+    <rect x="55" y="240" width="170" height="44" rx="6" fill="#eff6ff" stroke="#1e3a8a"/>
+    <text x="65" y="260" font-size="10" fill="#1e3a8a">💡 Em đã điền sẵn</text>
+    <text x="65" y="275" font-size="10" fill="#1e3a8a">từ schools.json,</text>
+    <text x="65" y="290" font-size="10" fill="#1e3a8a">thầy chỉ check lại.</text>
+  </g>
+
+  <!-- Arrow -->
+  <text x="255" y="195" font-size="24" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="270" y="80" width="200" height="220" rx="10" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="290" cy="105" r="18" fill="#1e3a8a"/>
+    <text x="290" y="110" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">2</text>
+    <text x="320" y="103" font-size="13" font-weight="700" fill="#1e3a8a">CÁN BỘ</text>
+    <text x="320" y="117" font-size="13" font-weight="700" fill="#1e3a8a">QUẢN LÝ</text>
+    <line x1="280" y1="135" x2="460" y2="135" stroke="#e2e8f0"/>
+    <text x="285" y="155" font-size="11" fill="#0f172a">✓ Hiệu trưởng *</text>
+    <text x="285" y="172" font-size="11" fill="#0f172a">✓ Phó HT</text>
+    <text x="285" y="189" font-size="11" fill="#0f172a">✓ Điện thoại</text>
+    <text x="285" y="206" font-size="11" fill="#0f172a">✓ Email</text>
+    <rect x="285" y="223" width="170" height="65" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="295" y="241" font-size="10" fill="#78350f">⚠ Tên HT sẽ in vào</text>
+    <text x="295" y="255" font-size="10" fill="#78350f">học bạ + báo cáo.</text>
+    <text x="295" y="270" font-size="10" fill="#78350f">Có thể sửa sau qua</text>
+    <text x="295" y="285" font-size="10" fill="#78350f">Admin → Thông tin</text>
+  </g>
+
+  <text x="485" y="195" font-size="24" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="500" y="80" width="200" height="220" rx="10" fill="#fff" stroke="#dc2626" stroke-width="2"/>
+    <circle cx="520" cy="105" r="18" fill="#dc2626"/>
+    <text x="520" y="110" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">3</text>
+    <text x="550" y="103" font-size="13" font-weight="700" fill="#dc2626">MÃ ĐĂNG</text>
+    <text x="550" y="117" font-size="13" font-weight="700" fill="#dc2626">NHẬP 🔐</text>
+    <line x1="510" y1="135" x2="690" y2="135" stroke="#e2e8f0"/>
+    <text x="515" y="155" font-size="11" fill="#0f172a">✓ Mã GV *</text>
+    <text x="515" y="172" font-size="11" fill="#0f172a">✓ Mã Admin *</text>
+    <rect x="515" y="184" width="170" height="106" rx="6" fill="#fef2f2" stroke="#dc2626"/>
+    <text x="525" y="202" font-size="10" font-weight="700" fill="#7f1d1d">⚠ BẢO MẬT:</text>
+    <text x="525" y="218" font-size="10" fill="#7f1d1d">- Mã ≥ 6 ký tự</text>
+    <text x="525" y="232" font-size="10" fill="#7f1d1d">- GV và Admin</text>
+    <text x="525" y="246" font-size="10" fill="#7f1d1d">  phải KHÁC nhau</text>
+    <text x="525" y="262" font-size="10" fill="#7f1d1d">- Lưu vào sổ tay</text>
+    <text x="525" y="276" font-size="10" fill="#7f1d1d">  hoặc Zalo BGH</text>
+  </g>
+
+  <text x="715" y="195" font-size="24" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="730" y="80" width="160" height="220" rx="10" fill="#fff" stroke="#10b981" stroke-width="2"/>
+    <circle cx="750" cy="105" r="18" fill="#10b981"/>
+    <text x="750" y="110" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">4</text>
+    <text x="780" y="113" font-size="13" font-weight="700" fill="#065f46">XÁC NHẬN</text>
+    <line x1="740" y1="135" x2="880" y2="135" stroke="#e2e8f0"/>
+    <text x="745" y="158" font-size="11" fill="#0f172a">✓ Bảng tổng kết</text>
+    <text x="745" y="178" font-size="11" fill="#0f172a">  thông tin nhập</text>
+    <text x="745" y="200" font-size="11" fill="#0f172a">✓ Bấm "Lưu" →</text>
+    <text x="745" y="220" font-size="11" fill="#0f172a">  reload trang</text>
+    <rect x="745" y="240" width="130" height="50" rx="6" fill="#dcfce7" stroke="#10b981"/>
+    <text x="755" y="260" font-size="10" fill="#065f46">🎉 Sau bước này:</text>
+    <text x="755" y="275" font-size="10" fill="#065f46">trường ĐÃ HOẠT</text>
+    <text x="755" y="290" font-size="10" fill="#065f46">ĐỘNG hoàn chỉnh</text>
+  </g>
+
+  <!-- Detailed mockup of step 1 modal -->
+  <rect x="50" y="330" width="800" height="210" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="50" y="330" width="800" height="50" rx="12" fill="linear-gradient(135deg,#eff6ff,#f0fdf4)"/>
+  <rect x="50" y="330" width="800" height="50" fill="#eff6ff"/>
+  <text x="70" y="358" font-size="14" font-weight="700" fill="#0f172a">🎉 Chào mừng — Thiết lập hệ thống cho Trường Tiểu học Thái Sơn</text>
+
+  <!-- Progress dots -->
+  <circle cx="500" cy="368" r="10" fill="#1e3a8a"/>
+  <text x="500" y="373" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">1</text>
+  <line x1="513" y1="368" x2="540" y2="368" stroke="#e2e8f0" stroke-width="2"/>
+  <circle cx="552" cy="368" r="10" fill="#e2e8f0"/>
+  <text x="552" y="373" font-size="11" fill="#64748b" text-anchor="middle" font-weight="700">2</text>
+  <line x1="565" y1="368" x2="592" y2="368" stroke="#e2e8f0" stroke-width="2"/>
+  <circle cx="604" cy="368" r="10" fill="#e2e8f0"/>
+  <text x="604" y="373" font-size="11" fill="#64748b" text-anchor="middle" font-weight="700">3</text>
+  <line x1="617" y1="368" x2="644" y2="368" stroke="#e2e8f0" stroke-width="2"/>
+  <circle cx="656" cy="368" r="10" fill="#e2e8f0"/>
+  <text x="656" y="373" font-size="11" fill="#64748b" text-anchor="middle" font-weight="700">4</text>
+
+  <text x="70" y="406" font-size="13" font-weight="700" fill="#0f172a">Bước 1/4 — Thông tin trường</text>
+
+  <text x="70" y="430" font-size="11" font-weight="600" fill="#0f172a">Tên trường (đầy đủ) *</text>
+  <rect x="70" y="436" width="350" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="80" y="455" font-size="12" fill="#0f172a">Trường Tiểu học Thái Sơn</text>
+
+  <text x="450" y="430" font-size="11" font-weight="600" fill="#0f172a">Năm học *</text>
+  <rect x="450" y="436" width="160" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="460" y="455" font-size="12" fill="#0f172a">2025-2026</text>
+
+  <text x="70" y="478" font-size="11" font-weight="600" fill="#0f172a">Xã / Tỉnh *</text>
+  <rect x="70" y="484" width="170" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="80" y="503" font-size="12" fill="#0f172a">Đô Lương</text>
+  <rect x="250" y="484" width="170" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="260" y="503" font-size="12" fill="#0f172a">Nghệ An</text>
+
+  <!-- Buttons -->
+  <rect x="60" y="525" width="100" height="15" fill="#fff"/>
+  <text x="70" y="535" font-size="11" fill="#94a3b8">← Quay lại</text>
+  <rect x="780" y="518" width="60" height="22" rx="6" fill="#1e3a8a"/>
+  <text x="810" y="533" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">Tiếp →</text>
+</svg>

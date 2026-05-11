@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" font-family="Segoe UI, Be Vietnam Pro, sans-serif">
+  <rect width="900" height="560" fill="#f8fafc"/>
+
+  <text x="450" y="34" font-size="20" font-weight="700" fill="#1e3a8a" text-anchor="middle">BƯỚC 3: DEPLOY WEB APP — LẤY URL /exec</text>
+
+  <!-- Trigger button -->
+  <rect x="50" y="70" width="400" height="60" rx="8" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+  <text x="70" y="98" font-size="13" font-weight="700" fill="#0f172a">1️⃣ Trong Apps Script editor:</text>
+  <text x="70" y="120" font-size="13" fill="#0f172a">Click nút <tspan font-weight="700" fill="#1e3a8a">"Deploy"</tspan> góc trên phải → <tspan font-weight="700" fill="#dc2626">"New deployment"</tspan></text>
+
+  <!-- Mockup Deploy button area -->
+  <rect x="470" y="70" width="380" height="60" rx="6" fill="#0f172a"/>
+  <rect x="490" y="80" width="100" height="40" rx="4" fill="#3b82f6"/>
+  <text x="540" y="105" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">▼ Deploy</text>
+  <rect x="600" y="86" width="160" height="28" rx="4" fill="#1e3a8a" stroke="#60a5fa"/>
+  <text x="680" y="105" font-size="12" fill="#fff" text-anchor="middle">＋ New deployment</text>
+  <text x="780" y="103" font-size="11" fill="#cbd5e1">↗</text>
+  <rect x="600" y="116" width="160" height="14" rx="4" fill="#1e3a8a" opacity="0.4"/>
+  <text x="680" y="127" font-size="9" fill="#cbd5e1" text-anchor="middle">Manage deployments</text>
+
+  <!-- Dialog mockup -->
+  <rect x="100" y="160" width="700" height="320" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="100" y="160" width="700" height="50" fill="#f1f5f9"/>
+  <text x="120" y="190" font-size="16" font-weight="700" fill="#0f172a">New deployment</text>
+  <text x="780" y="190" font-size="20" fill="#64748b" text-anchor="end" font-weight="300">✕</text>
+
+  <!-- Type selector -->
+  <text x="120" y="240" font-size="12" font-weight="700" fill="#0f172a">Select type</text>
+  <rect x="120" y="248" width="22" height="22" rx="4" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+  <text x="131" y="264" font-size="14" fill="#1e3a8a" text-anchor="middle" font-weight="700">⚙</text>
+  <text x="155" y="265" font-size="13" font-weight="700" fill="#1e3a8a">Web app</text>
+  <text x="155" y="282" font-size="11" fill="#64748b">A web app accessible from a URL</text>
+
+  <!-- Configuration fields -->
+  <text x="120" y="320" font-size="12" font-weight="700" fill="#0f172a">Description (tùy chọn)</text>
+  <rect x="120" y="328" width="660" height="32" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="135" y="349" font-size="12" fill="#94a3b8" font-style="italic">VD: HSS Thái Sơn — v1.0 — 2026-05-11</text>
+
+  <text x="120" y="385" font-size="12" font-weight="700" fill="#0f172a">Execute as <tspan fill="#dc2626">*</tspan></text>
+  <rect x="320" y="372" width="280" height="32" rx="4" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+  <text x="335" y="393" font-size="12" fill="#1e3a8a" font-weight="700">Me (chungtrt@gmail.com)</text>
+  <text x="585" y="392" font-size="13" fill="#64748b">▾</text>
+
+  <text x="120" y="430" font-size="12" font-weight="700" fill="#0f172a">Who has access <tspan fill="#dc2626">*</tspan></text>
+  <rect x="320" y="417" width="280" height="32" rx="4" fill="#fff" stroke="#dc2626" stroke-width="2"/>
+  <text x="335" y="438" font-size="12" fill="#dc2626" font-weight="700">Anyone</text>
+  <text x="585" y="437" font-size="13" fill="#dc2626">▾</text>
+  <text x="610" y="438" font-size="10" fill="#dc2626" font-style="italic">⚠ Bắt buộc!</text>
+
+  <rect x="640" y="455" width="140" height="34" rx="4" fill="#1e3a8a"/>
+  <text x="710" y="476" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">Deploy</text>
+
+  <!-- Output URL box -->
+  <rect x="50" y="495" width="820" height="55" rx="10" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+  <text x="65" y="516" font-size="12" font-weight="700" fill="#065f46">✓ Sau khi Deploy thành công, COPY URL "Web app" (dòng có /exec):</text>
+  <rect x="65" y="522" width="790" height="20" fill="#fff" stroke="#10b981"/>
+  <text x="75" y="537" font-size="11" font-family="monospace" fill="#0f172a">https://script.google.com/macros/s/AKfycby__YOUR_DEPLOYMENT_ID__/exec  ← Copy CẢ DÒNG này</text>
+</svg>

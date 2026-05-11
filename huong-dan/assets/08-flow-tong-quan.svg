@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" font-family="Segoe UI, Be Vietnam Pro, sans-serif">
+  <rect width="900" height="560" fill="#f8fafc"/>
+
+  <text x="450" y="36" font-size="20" font-weight="700" fill="#1e3a8a" text-anchor="middle">QUY TRÌNH TRIỂN KHAI 1 TRƯỜNG (5-8 PHÚT)</text>
+
+  <!-- Steps as horizontal flow -->
+  <g>
+    <rect x="30" y="80" width="120" height="120" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="90" cy="115" r="22" fill="#1e3a8a"/>
+    <text x="90" y="122" font-size="20" fill="#fff" text-anchor="middle">📊</text>
+    <text x="90" y="160" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">BƯỚC 1</text>
+    <text x="90" y="178" font-size="11" fill="#0f172a" text-anchor="middle">Tạo</text>
+    <text x="90" y="192" font-size="11" fill="#0f172a" text-anchor="middle">Google Sheet</text>
+  </g>
+
+  <text x="160" y="145" font-size="18" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="180" y="80" width="120" height="120" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="240" cy="115" r="22" fill="#1e3a8a"/>
+    <text x="240" y="122" font-size="20" fill="#fff" text-anchor="middle">⚙️</text>
+    <text x="240" y="160" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">BƯỚC 2</text>
+    <text x="240" y="178" font-size="11" fill="#0f172a" text-anchor="middle">Cài Apps</text>
+    <text x="240" y="192" font-size="11" fill="#0f172a" text-anchor="middle">Script</text>
+  </g>
+
+  <text x="310" y="145" font-size="18" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="330" y="80" width="120" height="120" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="390" cy="115" r="22" fill="#1e3a8a"/>
+    <text x="390" y="122" font-size="20" fill="#fff" text-anchor="middle">🚀</text>
+    <text x="390" y="160" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">BƯỚC 3</text>
+    <text x="390" y="178" font-size="11" fill="#0f172a" text-anchor="middle">Deploy</text>
+    <text x="390" y="192" font-size="11" fill="#0f172a" text-anchor="middle">Web App</text>
+  </g>
+
+  <text x="460" y="145" font-size="18" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="480" y="80" width="120" height="120" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="540" cy="115" r="22" fill="#1e3a8a"/>
+    <text x="540" y="122" font-size="20" fill="#fff" text-anchor="middle">📝</text>
+    <text x="540" y="160" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">BƯỚC 4</text>
+    <text x="540" y="178" font-size="11" fill="#0f172a" text-anchor="middle">Điền URL +</text>
+    <text x="540" y="192" font-size="11" fill="#0f172a" text-anchor="middle">push GitHub</text>
+  </g>
+
+  <text x="610" y="145" font-size="18" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="630" y="80" width="120" height="120" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/>
+    <circle cx="690" cy="115" r="22" fill="#1e3a8a"/>
+    <text x="690" y="122" font-size="20" fill="#fff" text-anchor="middle">🎉</text>
+    <text x="690" y="160" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">BƯỚC 5</text>
+    <text x="690" y="178" font-size="11" fill="#0f172a" text-anchor="middle">Mở web +</text>
+    <text x="690" y="192" font-size="11" fill="#0f172a" text-anchor="middle">chạy Wizard</text>
+  </g>
+
+  <text x="760" y="145" font-size="18" fill="#1e3a8a" text-anchor="middle">→</text>
+
+  <g>
+    <rect x="780" y="80" width="100" height="120" rx="12" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+    <circle cx="830" cy="115" r="22" fill="#10b981"/>
+    <text x="830" y="123" font-size="22" fill="#fff" text-anchor="middle">✓</text>
+    <text x="830" y="160" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">HOÀN</text>
+    <text x="830" y="178" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">TẤT</text>
+    <text x="830" y="195" font-size="9" fill="#065f46" text-anchor="middle">Trường online</text>
+  </g>
+
+  <!-- Time markers below -->
+  <text x="90" y="225" font-size="11" fill="#64748b" text-anchor="middle">1 phút</text>
+  <text x="240" y="225" font-size="11" fill="#64748b" text-anchor="middle">3 phút</text>
+  <text x="390" y="225" font-size="11" fill="#64748b" text-anchor="middle">1 phút</text>
+  <text x="540" y="225" font-size="11" fill="#64748b" text-anchor="middle">1 phút</text>
+  <text x="690" y="225" font-size="11" fill="#64748b" text-anchor="middle">2 phút</text>
+  <text x="830" y="225" font-size="11" fill="#10b981" text-anchor="middle" font-weight="700">~8 phút</text>
+
+  <!-- Section: What user does after deployment -->
+  <text x="450" y="280" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">SAU KHI HOÀN TẤT — TRƯỜNG VẬN HÀNH BÌNH THƯỜNG</text>
+
+  <g>
+    <rect x="50" y="305" width="260" height="130" rx="10" fill="#fff" stroke="#0d9488" stroke-width="2"/>
+    <text x="65" y="328" font-size="14" font-weight="700" fill="#0d9488">👨‍🏫 Giáo viên</text>
+    <line x1="60" y1="340" x2="300" y2="340" stroke="#e2e8f0"/>
+    <text x="65" y="358" font-size="11" fill="#0f172a">→ Vào URL của trường</text>
+    <text x="65" y="375" font-size="11" fill="#0f172a">→ Đăng nhập bằng user/pass</text>
+    <text x="65" y="392" font-size="11" fill="#0f172a">→ Nhập điểm, nhận xét HS</text>
+    <text x="65" y="409" font-size="11" fill="#0f172a">→ Xuất học bạ Word/PDF</text>
+    <text x="65" y="426" font-size="11" fill="#0f172a">→ Đồng bộ điểm lên CSDL ngành</text>
+  </g>
+
+  <g>
+    <rect x="320" y="305" width="260" height="130" rx="10" fill="#fff" stroke="#0d9488" stroke-width="2"/>
+    <text x="335" y="328" font-size="14" font-weight="700" fill="#0d9488">👨‍💼 Hiệu trưởng</text>
+    <line x1="330" y1="340" x2="570" y2="340" stroke="#e2e8f0"/>
+    <text x="335" y="358" font-size="11" fill="#0f172a">→ Quản lý DSGV, DSHS</text>
+    <text x="335" y="375" font-size="11" fill="#0f172a">→ Upload chữ ký, dấu trường</text>
+    <text x="335" y="392" font-size="11" fill="#0f172a">→ Xem báo cáo tổng</text>
+    <text x="335" y="409" font-size="11" fill="#0f172a">→ Sửa danh mục hồ sơ + MC</text>
+    <text x="335" y="426" font-size="11" fill="#0f172a">→ Ký duyệt KĐCL</text>
+  </g>
+
+  <g>
+    <rect x="590" y="305" width="260" height="130" rx="10" fill="#fff" stroke="#0d9488" stroke-width="2"/>
+    <text x="605" y="328" font-size="14" font-weight="700" fill="#0d9488">👨‍👩‍👧 Phụ huynh</text>
+    <line x1="600" y1="340" x2="840" y2="340" stroke="#e2e8f0"/>
+    <text x="605" y="358" font-size="11" fill="#0f172a">→ Vào URL công khai</text>
+    <text x="605" y="375" font-size="11" fill="#0f172a">→ Tra cứu kết quả HS qua mã</text>
+    <text x="605" y="392" font-size="11" fill="#0f172a">→ Xem báo cáo lớp</text>
+    <text x="605" y="409" font-size="11" fill="#0f172a" font-style="italic" fill="#64748b">(Không cần đăng nhập,</text>
+    <text x="605" y="426" font-size="11" fill="#0f172a" font-style="italic" fill="#64748b">chỉ thấy data công khai)</text>
+  </g>
+
+  <!-- Bottom highlights -->
+  <rect x="50" y="460" width="800" height="80" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="450" y="486" font-size="14" font-weight="700" fill="#78350f" text-anchor="middle">💡 Trường thứ 2, thứ 3, thứ N: chỉ làm BƯỚC 1 → 5 (5-8 phút/trường)</text>
+  <text x="450" y="508" font-size="12" fill="#78350f" text-anchor="middle">Không cần sửa code, không cần dev. Mọi sửa đổi danh mục/cấu hình đều qua Admin panel.</text>
+  <text x="450" y="528" font-size="12" fill="#78350f" text-anchor="middle">Code update FE: thầy push 1 lần — TẤT CẢ trường tự cập nhật trong 30 giây.</text>
+</svg>
