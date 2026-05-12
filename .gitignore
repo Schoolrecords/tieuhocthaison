@@ -1,9 +1,9 @@
 # Claude Code local config (chứa allowlist & path máy local)
 .claude/settings.local.json
 
-# Backup folders trong mẫu-hocba (chỉ giữ template chính)
-mẫu-hocba/_backup-*
-mẫu-hocba/_build/_*
+# Backup folders trong templates-hocba (chỉ giữ template chính)
+templates-hocba/_backup-*
+templates-hocba/_build/_*
 
 # Editor/OS junk
 .DS_Store

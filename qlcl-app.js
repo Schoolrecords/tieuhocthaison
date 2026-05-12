@@ -3575,7 +3575,7 @@ function _hbWordBlob(html){
 // ═══════════════════════════════════════════════════════════════
 // XUẤT HỌC BẠ WORD — TEMPLATE-BASED (2026-05-08)
 // Dùng docxtemplater + PizZip → output .docx CHUẨN theo Phụ lục 1 TT 27/2020
-// Template lưu tại: mẫu-hocba/Mau-HocBa-Lop{1..5}.docx
+// Template lưu tại: templates-hocba/Mau-HocBa-Lop{1..5}.docx
 // ═══════════════════════════════════════════════════════════════
 
 // Build data object để truyền cho docxtemplater
@@ -3839,7 +3839,7 @@ async function _genHocBaDocx(s){
 
   var khoi = parseInt(s.khoi) || 1;
   if (khoi < 1 || khoi > 5) khoi = 1;
-  var tplUrl = 'mẫu-hocba/Mau-HocBa-Lop' + khoi + '.docx?v=2026.05.09-manual-edit';
+  var tplUrl = 'templates-hocba/Mau-HocBa-Lop' + khoi + '.docx?v=2026.05.09-manual-edit';
 
   var resp = await fetch(tplUrl);
   if (!resp.ok) throw new Error('Không tải được template: ' + tplUrl + ' (HTTP ' + resp.status + ')');

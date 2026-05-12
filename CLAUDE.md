@@ -16,7 +16,7 @@ GitHub Pages: hososotruonghoc.github.io/tieuhocthaison/
 ├─ qlcl-style.css   — Theme QLCL
 ├─ Code.gs          — Backend Apps Script (gộp Router + HSS + TDG + QLCL + MOET)
 ├─ hss-sync-extension/  — Chrome Extension đồng bộ điểm lên CSDL ngành MOET
-└─ mẫu-hocba/     — Mẫu học bạ Lớp 1-5 (.docx)
+└─ templates-hocba/     — Mẫu học bạ Lớp 1-5 (.docx)
        │
        ▼ fetch JSONP
 Apps Script: AKfycbwTwqzXPUNzeLnnneoE8.../exec
