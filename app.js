@@ -1,8 +1,6 @@
 /*
 ============================================================================
- app.js — Logic chính của Hệ thống Hồ sơ số (Multi-School template, Phương án D)
- Dùng window.SCHOOL (set bởi boot.js từ schools.json) làm nguồn fallback default
- cho mọi nơi xưng tên trường khi cfg sheet CauHinh chưa được điền
+ app.js — Logic chính của Hệ thống Hồ sơ số Trường TH Thái Sơn
 ============================================================================
  Tách từ index.html (Refactor 2026-05-05) — giảm HTML từ 932KB → khoảng 510KB.
  File này chứa:
@@ -685,6 +683,13 @@
       if (badge) {
         badge.className = 'hss-badge ' + (status === 'co' ? 'hss-badge-co' : 'hss-badge-chua');
         badge.textContent = (status === 'co') ? 'Đã có' : 'Chưa có';
+        if (status === 'co') {
+          badge.style.cursor = '';
+          badge.removeAttribute('title');
+        } else {
+          badge.style.cursor = 'pointer';
+          badge.title = 'Click để xem chi tiết lý do';
+        }
       }
     });
     // Cập nhật progress box (đếm lại từ DOM)
@@ -704,6 +709,104 @@
 
   // Reset cache khi Admin lưu thay đổi → gọi từ admHssStatusSaveStatus / admHssStatusSavePT
   window.invalidateHssStatusCache = function(){ window.HSS_STATUS_MAP = null; window.HSS_STATUS_STATS = null; };
+
+  // ============ DEBUG: click "Chưa có" → hiển thị chi tiết ============
+  function _hssFindLeaf(code){
+    var found = null;
+    (function walk(nodes){
+      for (var i = 0; i < nodes.length; i++){
+        var n = nodes[i];
+        if (n.leaf && n.code === code){ found = n; return; }
+        if (n.children){ walk(n.children); if (found) return; }
+      }
+    })(window.HSS || []);
+    return found;
+  }
+
+  function _hssShowDebug(code){
+    var leaf = _hssFindLeaf(code);
+    var fs = (window.HSS_STATUS_MAP || {})[code] || {};
+    var link = (leaf && leaf.link) || '';
+    var name = (leaf && leaf.name) || '(không tìm thấy)';
+
+    // Extract folder ID
+    var folderId = '';
+    var m = link.match(/[-\w]{25,}/);
+    if (m) folderId = m[0];
+
+    // Status gốc từ backend
+    var raw = fs.folderStatus || (link ? '(chưa quét)' : 'NO_LINK');
+    var source = fs.source || '(unscanned)';
+    var lastChecked = fs.lastChecked ? new Date(fs.lastChecked).toLocaleString('vi-VN') : '–';
+
+    // Phỏng đoán nguyên nhân
+    var dx = '';
+    var dxColor = '#dc2626';
+    if (!link) {
+      dx = 'Chưa dán link Drive ở dòng này.\nKhắc phục: Vào Admin → Hồ sơ số → tìm dòng ' + code + ' → dán link folder Drive vào cột "LINK GOOGLE DRIVE" → Lưu.';
+    } else if (raw === 'NO_LINK') {
+      dx = 'Backend đọc link rỗng. Có thể link đã bị xóa khỏi Sheet hoặc Sheet chưa đồng bộ.';
+    } else if (raw === 'EMPTY') {
+      dx = 'Folder Drive tồn tại nhưng KHÔNG có file nào (đệ quy 5 cấp).\nKiểm tra: link đang trỏ folder rỗng, hoặc trỏ folder cha mà file thực tế nằm sâu hơn 5 cấp.';
+    } else if (raw === 'ERROR') {
+      dx = 'Backend KHÔNG truy cập được folder.\nKhả năng cao: folder ở "Được chia sẻ với tôi" mà tài khoản chủ Apps Script không có quyền.\nKhắc phục: vào Drive, share folder cho email chủ Apps Script (quyền Xem), HOẶC chuyển folder vào Drive của tài khoản chủ project.';
+    } else if (raw === 'OK') {
+      dx = 'Backend báo CÓ file (OK), nhưng badge vẫn "Chưa có".\nCó thể bị Admin override thủ công (source=manual). Vào Admin → Trạng thái HSS để kiểm tra.';
+      dxColor = '#0891b2';
+    } else if (raw === '(chưa quét)') {
+      dx = 'Mã này có link nhưng backend CHƯA quét lần nào. Bấm "Kiểm tra ngay" hoặc đợi 5 phút auto-rescan.';
+      dxColor = '#0891b2';
+    } else {
+      dx = 'Status không xác định: ' + raw;
+    }
+
+    // Remove old modal nếu có
+    var old = document.getElementById('hssDebugModal');
+    if (old) old.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'hssDebugModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    modal.innerHTML =
+      '<div style="background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+        '<div style="padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">' +
+          '<h3 style="margin:0;font-family:\'Fraunces\',serif;color:#0c5da5;font-size:1.2rem">🔍 Chi tiết hồ sơ ' + escapeHtml(code) + '</h3>' +
+          '<button onclick="document.getElementById(\'hssDebugModal\').remove()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;color:#475569">✕</button>' +
+        '</div>' +
+        '<div style="padding:20px 24px">' +
+          '<div style="margin-bottom:14px"><b style="color:#475569">Tên hồ sơ:</b><br>' + escapeHtml(name) + '</div>' +
+          '<div style="margin-bottom:14px"><b style="color:#475569">Link Drive đã dán:</b><br>' +
+            (link ? '<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener" style="color:#0c5da5;word-break:break-all">' + escapeHtml(link) + '</a>' : '<i style="color:#dc2626">(trống — chưa dán link)</i>') +
+          '</div>' +
+          (folderId ? '<div style="margin-bottom:14px"><b style="color:#475569">Folder ID:</b><br><code style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-size:.9em">' + escapeHtml(folderId) + '</code></div>' : '') +
+          '<div style="margin-bottom:14px;display:flex;gap:20px;flex-wrap:wrap">' +
+            '<div><b style="color:#475569">Status backend:</b><br><code style="background:#fef3c7;padding:2px 8px;border-radius:4px">' + escapeHtml(raw) + '</code></div>' +
+            '<div><b style="color:#475569">Nguồn:</b><br><code style="background:#f1f5f9;padding:2px 8px;border-radius:4px">' + escapeHtml(source) + '</code></div>' +
+            '<div><b style="color:#475569">Quét lần cuối:</b><br>' + escapeHtml(lastChecked) + '</div>' +
+          '</div>' +
+          '<div style="margin-top:18px;padding:14px 16px;background:' + (dxColor === '#dc2626' ? '#fef2f2' : '#ecfeff') + ';border-left:4px solid ' + dxColor + ';border-radius:8px">' +
+            '<b style="color:' + dxColor + ';display:block;margin-bottom:6px">📋 Phỏng đoán nguyên nhân:</b>' +
+            '<div style="white-space:pre-wrap;color:#1e293b;line-height:1.6">' + escapeHtml(dx) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+  }
+
+  // Event delegate trên document — chỉ bind 1 lần
+  if (!window._hssDebugBound) {
+    window._hssDebugBound = true;
+    document.addEventListener('click', function(e){
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains('hss-badge-chua')) return;
+      var tr = t.closest('tr');
+      if (!tr) return;
+      var codeCell = tr.querySelector('.hss-code-cell');
+      if (!codeCell) return;
+      _hssShowDebug(codeCell.textContent.trim());
+    });
+  }
 
   // Format ngày: "07:33 05/05/2026"
   function _hssFmtDate(d){
@@ -751,7 +854,7 @@
       var pt     = _hssNguoiPhuTrach(it);
       var badge  = status === 'co'
         ? '<span class="hss-badge hss-badge-co">Đã có</span>'
-        : '<span class="hss-badge hss-badge-chua">Chưa có</span>';
+        : '<span class="hss-badge hss-badge-chua" style="cursor:pointer" title="Click để xem chi tiết lý do">Chưa có</span>';
       var folder = (it.has && it.link)
         ? '<a class="hss-folder-icon has" href="' + escapeHtml(it.link) + '" target="_blank" rel="noopener" title="Mở thư mục Drive">📁</a>'
         : '<span class="hss-folder-icon empty" title="Chưa có file">📁</span>';
@@ -908,6 +1011,30 @@
     document.getElementById('catDetail').classList.remove('active');
     document.getElementById('records').scrollIntoView({behavior:'smooth'});
   }
+
+  // Mở link Drive động cho nút "Hệ thống văn bản" (trỏ tới 4.1.1. Văn bản đến)
+  window.openHeThongVanBan = function(e){
+    if(e && e.preventDefault) e.preventDefault();
+    var hss = window.HSS || [];
+    var target = null;
+    (function walk(nodes){
+      for(var i=0; i<nodes.length; i++){
+        var n = nodes[i];
+        if(n.leaf && n.code === '4.1.1'){ target = n; return; }
+        if(n.children){ walk(n.children); if(target) return; }
+      }
+    })(hss);
+    if(!target){
+      alert('Chưa tìm thấy mục "4.1.1. Văn bản đến" trong Danh mục Hồ sơ số.\nVui lòng kiểm tra Admin → Hồ sơ số.');
+      return false;
+    }
+    if(!target.link){
+      alert('Mục "4.1.1. Văn bản đến" chưa được gắn link Google Drive.\nVui lòng vào Admin → Hồ sơ số → dòng 4.1.1 để dán link.');
+      return false;
+    }
+    window.open(target.link, '_blank', 'noopener');
+    return false;
+  };
 
   // Search records
   document.getElementById('recSearch').addEventListener('input', e => {
@@ -1617,7 +1744,7 @@
       + bodyHtml
       + '<div class="sign-section">'
       + '<div class="sign-block right">'
-      + '<div style="font-style:italic;margin-bottom:8pt">' + (((window.STATS && STATS.config && STATS.config.address && STATS.config.address.match(/Xã\s+([^,]+)/) || [])[1]) || (window.SCHOOL && window.SCHOOL.xa) || '...') + ', ' + dateStr + '</div>'
+      + '<div style="font-style:italic;margin-bottom:8pt">Quảng Châu, ' + dateStr + '</div>'
       + '<div class="sign-role">HIỆU TRƯỞNG</div>'
       + '<div class="sign-note">(Ký, ghi rõ họ tên, đóng dấu)</div>'
       + '<div class="sign-name">&nbsp;</div>'
@@ -2201,8 +2328,8 @@
     }
     // Cập nhật mô tả với thông tin thật
     var cfg = STATS.config || {};
-    var name = cfg.name || (window.SCHOOL && window.SCHOOL.name) || 'Trường Tiểu học ...';
-    var addr = cfg.address || (window.SCHOOL ? ('Xã ' + window.SCHOOL.xa + ', Tỉnh ' + window.SCHOOL.tinh) : 'Xã ..., Tỉnh ...');
+    var name = cfg.name || 'Trường Tiểu học Thái Sơn';
+    var addr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
     var tcCount = STATS.totalTeachers || 0;
     document.getElementById('aboutDesc1').textContent = name + ' tọa lạc tại ' + addr + '. Trường luôn nỗ lực xây dựng môi trường giáo dục an toàn, thân thiện, hiệu quả.';
     if(tcCount) document.getElementById('aboutDesc2').textContent = 'Với đội ngũ ' + tcCount + ' CB,GV,NV tận tâm, nhà trường cam kết mang đến chương trình giáo dục chất lượng cao theo CTGDPT 2018.';
@@ -3146,8 +3273,8 @@
   // Build mẫu DS Học Sinh đẹp
   function _buildStyledHSSheet(){
     var cfg = (window.STATS && STATS.config) || {};
-    var schoolName = cfg.name || (window.SCHOOL && window.SCHOOL.name && window.SCHOOL.name.toUpperCase()) || 'TRƯỜNG TIỂU HỌC ...';
-    var schoolAddr = cfg.address || (window.SCHOOL ? ('Xã ' + window.SCHOOL.xa + ', Tỉnh ' + window.SCHOOL.tinh) : 'Xã ..., Tỉnh ...');
+    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
+    var schoolAddr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['STT','Mã lớp','Mã HS','Họ và tên','Ngày sinh','Giới tính',
                    'Dân tộc','Tôn giáo','Tỉnh/TP','','Xã/Phường','Tổ/Thôn/Xóm',
@@ -3214,14 +3341,11 @@
         });
       });
     } else {
-      // Mẫu trống — tạo 3 hàng demo theo địa danh của school trong registry
-      var _xa = (window.SCHOOL && window.SCHOOL.xa) || '...';
-      var _tinh = (window.SCHOOL && window.SCHOOL.tinh) || 'Nghệ An';
-      var _ns = _xa + ', ' + _tinh;
+      // Mẫu trống — tạo 3 hàng demo để admin biết format
       var demos = [
-        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', _tinh, '', _xa, 'Xóm 5', _ns, '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
-        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', _tinh, '', _xa, 'Xóm 3', _ns, '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
-        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', _tinh, '', _xa, 'Xóm 7', _ns, '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
+        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 5', 'Quảng Châu, Nghệ An', '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
+        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 3', 'Quảng Châu, Nghệ An', '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
+        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 7', 'Quảng Châu, Nghệ An', '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
       ];
       demos.forEach(function(rowVals, idx){
         var isAlt = (idx % 2 === 1);
@@ -3289,8 +3413,8 @@
   // Build mẫu DSGV — cùng template style
   function _buildStyledGVSheet(){
     var cfg = (window.STATS && STATS.config) || {};
-    var schoolName = cfg.name || (window.SCHOOL && window.SCHOOL.name && window.SCHOOL.name.toUpperCase()) || 'TRƯỜNG TIỂU HỌC ...';
-    var schoolAddr = cfg.address || (window.SCHOOL ? ('Xã ' + window.SCHOOL.xa + ', Tỉnh ' + window.SCHOOL.tinh) : 'Xã ..., Tỉnh ...');
+    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
+    var schoolAddr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['TT','Họ và tên','Ngày sinh','Chức vụ','Trình độ','SĐT','Gmail','Link hồ sơ'];
     var COL_COUNT = headers.length;  // 8

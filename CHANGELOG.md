@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [v5.0 — Quay về single-school clone TH Diễn Liên] — 2026-05-12
+
+🔄 **Reverted kiến trúc Multi-School (v4.0) về single-school cho dễ sử dụng** — theo yêu cầu của thầy:
+> "Quay lại dự án gốc của TH Diễn Liên cho dễ sử dụng. Thiết kế đầu vào thẳng luôn không phải khai báo ngày đầu."
+
+### Thay đổi
+- **Xoá**: `boot.js`, `wizard.js`, `schools.json` (3 file Multi-School layer)
+- **Copy nguyên 6 file FE từ THDienLien**: `index.html`, `app.js`, `style.css`, `qlcl.html`, `qlcl-app.js`, `qlcl-style.css`
+- **Thay text trong 6 file FE**:
+  - `Diễn Liên` → `Thái Sơn` (45 occurrences)
+  - `tieuhocdienlien` → `tieuhocthaison` (URL canonical/og)
+  - 5 URL Apps Script DL → URL Apps Script Thái Sơn (`AKfycbwTwqzXPUNzeLnnneoE8.../exec`)
+- **GIỮ NGUYÊN** `Code.gs` hiện tại của Thái Sơn (đang chạy ổn với Sheet đã setup; KHÔNG redeploy Apps Script).
+- **Backup**: branch `backup-multi-school-v4-2026-05-12` lưu lại trạng thái v4.0 nếu cần khôi phục.
+
+### Hệ quả
+- ✅ Vào web không còn wizard 4 bước; load thẳng giao diện HSS + KĐCL + QLCL như Diễn Liên.
+- ✅ FE 100% giống Diễn Liên về tính năng và thiết kế; chỉ khác data (tên trường, URL backend).
+- ❌ Mất khả năng phục vụ nhiều trường từ 1 codebase (1 trường = 1 fork riêng từ giờ).
+
 ## [v4.0 — Multi-School Template, Kiến trúc D] — 2026-05-11
 
 🎉 **Bước nhảy kiến trúc**: codebase chuyển từ instance-specific (mỗi trường 1 fork) sang

@@ -1,42 +1,50 @@
 <!DOCTYPE html>
-<html lang="vi" data-page="hss">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- ========== META SEO — boot.js sẽ điền động sau khi biết school ========== -->
-<title>Hồ sơ số Tiểu học</title>
-<meta name="description" content="">
-<link rel="canonical" href="">
+<!-- ========== ĐỔI TÊN TRƯỜNG Ở ĐÂY KHI TẠO CHO TRƯỜNG MỚI ========== -->
+<title>Hồ sơ số - Trường Tiểu học Thái Sơn</title>
+<meta name="description" content="Hồ sơ số chính thức cho Trường Tiểu học Thái Sơn. Hệ thống quản lý hồ sơ số, danh sách CBGVNV và học sinh — nhập dữ liệu qua Admin → Excel.">
+<link rel="canonical" href="https://hososotruonghoc.github.io/tieuhocthaison/">
+<!-- Mobile / PWA-friendly -->
 <meta name="theme-color" content="#1E4A8F">
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Hồ sơ số">
+<!-- Open Graph (Zalo, Facebook, Messenger link preview) -->
+<!--
+  ⚠ QUAN TRỌNG cho Zalo/Messenger:
+  • og:image PHẢI là URL tuyệt đối, cùng tên miền với trang (không dùng Google Drive)
+  • Upload og-banner.jpg lên gốc Netlify (cùng thư mục index.html) trước khi deploy
+  • Sau khi deploy, làm mới cache scrape tại:
+      – Facebook/Messenger: https://developers.facebook.com/tools/debug/
+      – Zalo: gửi link vào 1 chat bất kỳ rồi copy lại dán — Zalo tự scrape
+  • Kích thước khuyến nghị 1200×630 (tỉ lệ 1.91:1). Tối thiểu 300×200.
+-->
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Hồ sơ số Trường Tiểu học Thái Sơn">
 <meta property="og:locale" content="vi_VN">
-<meta property="og:site_name" content="">
-<meta property="og:url" content="">
-<meta property="og:title" content="">
-<meta property="og:description" content="">
-<meta property="og:image" content="">
+<meta property="og:url" content="https://hososotruonghoc.github.io/tieuhocthaison/">
+<meta property="og:title" content="Hồ sơ số - Trường Tiểu học Thái Sơn">
+<meta property="og:description" content="Hồ sơ số chính thức cho Trường Tiểu học Thái Sơn. Hệ thống quản lý hồ sơ số, danh sách CBGVNV và học sinh — nhập dữ liệu qua Admin → Excel.">
+<meta property="og:image" content="https://hososotruonghoc.github.io/tieuhocthaison/og-banner.jpg">
+<meta property="og:image:secure_url" content="https://hososotruonghoc.github.io/tieuhocthaison/og-banner.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="">
+<meta property="og:image:alt" content="Hồ sơ số Trường Tiểu học Thái Sơn">
+<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="">
-<meta name="twitter:title" content="">
-<meta name="twitter:description" content="">
-<meta name="twitter:image" content="">
+<meta name="twitter:url" content="https://hososotruonghoc.github.io/tieuhocthaison/">
+<meta name="twitter:title" content="Hồ sơ số - Trường Tiểu học Thái Sơn">
+<meta name="twitter:description" content="Hồ sơ số chính thức cho Trường Tiểu học Thái Sơn.">
+<meta name="twitter:image" content="https://hososotruonghoc.github.io/tieuhocthaison/og-banner.jpg">
+<!-- Zalo — tuỳ chọn: nếu có Zalo OA thì điền ID, nếu không thì bỏ qua -->
 <meta property="zalo:official_account_id" content="">
-<!--
-  Multi-School Architecture (Phương án D):
-  • Không hard-code thông tin trường trong file này.
-  • boot.js load đầu tiên → fetch schools.json → set window.SCHOOL/API_URL → set meta SEO động.
-  • Triển khai trường mới: chỉ cần thêm 1 entry vào schools.json + Apps Script URL.
--->
-<!-- ========== HẾT PHẦN META ========== -->
+<!-- ========== HẾT PHẦN CẦN ĐỔI ========== -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%238dd3a8'/%3E%3Cstop offset='100%25' stop-color='%233fb28c'/%3E%3C/linearGradient%3E%3ClinearGradient id='l1' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23a8e650'/%3E%3Cstop offset='100%25' stop-color='%235dba2f'/%3E%3C/linearGradient%3E%3ClinearGradient id='l2' x1='1' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%238edc40'/%3E%3Cstop offset='100%25' stop-color='%234aab20'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='28' r='20' fill='%23fdfbf4'/%3E%3Cellipse cx='32' cy='38' rx='10' ry='6' fill='%238B6B52'/%3E%3Cellipse cx='32' cy='37' rx='9' ry='5' fill='%239B7B62'/%3E%3Cpath d='M32 36C32 36 31 24 32 18' stroke='%236BBF3B' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M33 22C38 14 46 12 49 15C51 17 47 24 40 27C35 29 33 26 33 22Z' fill='url(%23l1)'/%3E%3Cpath d='M31 26C26 19 18 17 15 20C13 22 17 28 24 30C29 32 31 29 31 26Z' fill='url(%23l2)'/%3E%3Cpath d='M34 30C37 26 42 25 44 27C45 28 43 32 38 33C35 34 34 32 34 30Z' fill='%23a8e650' opacity='0.8'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%238dd3a8'/%3E%3Cstop offset='100%25' stop-color='%233fb28c'/%3E%3C/linearGradient%3E%3ClinearGradient id='l1' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23a8e650'/%3E%3Cstop offset='100%25' stop-color='%235dba2f'/%3E%3C/linearGradient%3E%3ClinearGradient id='l2' x1='1' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%238edc40'/%3E%3Cstop offset='100%25' stop-color='%234aab20'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='28' r='20' fill='%23fdfbf4'/%3E%3Cellipse cx='32' cy='38' rx='10' ry='6' fill='%238B6B52'/%3E%3Cellipse cx='32' cy='37' rx='9' ry='5' fill='%239B7B62'/%3E%3Cpath d='M32 36C32 36 31 24 32 18' stroke='%236BBF3B' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M33 22C38 14 46 12 49 15C51 17 47 24 40 27C35 29 33 26 33 22Z' fill='url(%23l1)'/%3E%3Cpath d='M31 26C26 19 18 17 15 20C13 22 17 28 24 30C29 32 31 29 31 26Z' fill='url(%23l2)'/%3E%3Cpath d='M34 30C37 26 42 25 44 27C45 28 43 32 38 33C35 34 34 32 34 30Z' fill='%23a8e650' opacity='0.8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,21 +59,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- ⚡ EARLY FETCH: bắn JSONP tới GAS ngay khi trình duyệt đọc <head>.
      Khi main script chạy, dữ liệu có thể đã về → rút ngắn màn hình loading 1–2s -->
-<!-- ⚡ EARLY FETCH: boot.js sẽ inject script tag với apiUrl đúng SAU khi resolve school từ schools.json -->
 <script>
-window.__earlyCb = function(resp){ window.__earlyData = resp; };
-window.__earlyFailed = false;
-// boot.js sẽ gọi window.__startEarlyFetch(apiUrl) sau khi load registry
-window.__startEarlyFetch = function(apiUrl){
-  if (!apiUrl) return;
+(function(){
+  var API_URL_EARLY = 'https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec';
+  window.__earlyCb = function(resp){ window.__earlyData = resp; };
+  window.__earlyFailed = false;
   var s = document.createElement('script');
-  s.src = apiUrl + '?action=all&callback=__earlyCb';
+  s.src = API_URL_EARLY + '?action=all&callback=__earlyCb';
   s.async = true;
   s.onerror = function(){ window.__earlyFailed = true; };
   (document.head || document.documentElement).appendChild(s);
-};
+})();
 </script>
-<script src="boot.js?v=2026.05.11-multischool"></script>
 <link rel="stylesheet" href="style.css?v=2026.05.11-mobile-guide">
 <style>
 /* Eye toggle cho password input — 2026-05-09 */
@@ -122,8 +127,8 @@ function pwToggle(btn){
 <nav>
   <div class="logo"><div class="logo-mark">📚</div><span id="navSchoolName">Tiểu học ...</span></div>
   <ul class="nav-links">
-    <li><a href="#home">Trang chủ</a></li>
     <li><a href="#about">Giới thiệu</a></li>
+    <li><a href="javascript:void(0)" onclick="return openHeThongVanBan(event)" title="Mở folder 4.1.1. Văn bản đến trên Google Drive">Hệ thống văn bản</a></li>
     <li><a href="#records">Hồ sơ số</a></li>
     <li><a href="javascript:void(0)" onclick="return showKdcl(event)" class="nav-external" title="Mở Hệ thống KĐCL-TĐG">Hệ thống KĐCL - TĐG</a></li>
     <li><a href="javascript:void(0)" onclick="return showQlcl(event)" class="nav-external" style="background:linear-gradient(135deg,rgba(120,170,230,.6),rgba(58,107,168,.7))" title="Mở Modul Quản lý Chất lượng">QL Chất lượng 📊</a></li>
@@ -137,8 +142,8 @@ function pwToggle(btn){
 <div class="mobile-backdrop" id="backdrop" onclick="toggleMenu()"></div>
 <aside class="mobile-menu" id="mobileMenu">
   <button class="mobile-close" onclick="toggleMenu()">✕</button>
-  <a href="#home" onclick="toggleMenu()">Trang chủ</a>
   <a href="#about" onclick="toggleMenu()">Giới thiệu</a>
+  <a href="javascript:void(0)" onclick="toggleMenu();return openHeThongVanBan(event)">Hệ thống văn bản</a>
   <a href="#records" onclick="toggleMenu()">Hồ sơ số</a>
   <a href="javascript:void(0)" onclick="toggleMenu();return showKdcl(event)">Hệ thống KĐCL - TĐG</a>
   <a href="javascript:void(0)" onclick="toggleMenu();return showQlcl(event)">QL Chất lượng 📊</a>
@@ -509,7 +514,7 @@ function pwToggle(btn){
               <text x="186" y="90" font-size="18" fill="#1e40af">→</text>
               <!-- Bước 2: màn hình đăng nhập QLCL -->
               <rect x="210" y="20" width="160" height="120" rx="12" fill="#fff" stroke="#3b82f6"/>
-              <text x="290" y="40" font-size="9" fill="#1e40af" text-anchor="middle" font-family="serif" font-weight="bold" data-school-mock="shortName">🏫 [Tên trường]</text>
+              <text x="290" y="40" font-size="9" fill="#1e40af" text-anchor="middle" font-family="serif" font-weight="bold">🏫 TH Thái Sơn</text>
               <text x="290" y="52" font-size="6" fill="#475569" text-anchor="middle" font-family="sans-serif">QLCL · NH 2025-2026</text>
               <rect x="226" y="62" width="128" height="18" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
               <text x="232" y="74" font-size="7" fill="#94a3b8" font-family="sans-serif">Tên đăng nhập...</text>
@@ -941,12 +946,12 @@ function pwToggle(btn){
           <p style="font-size:.82rem;color:#6b7a72;margin-bottom:18px">💡 Thông tin trường được lưu trong sheet <b>"CauHinh"</b> trên Google Sheet. Nhấn <b>"Lưu thay đổi"</b> sẽ ghi trực tiếp lên Sheet.</p>
           <div class="adm-field">
             <label>Tên trường</label>
-            <input type="text" id="admName" placeholder="VD: Trường Tiểu học [tên trường]">
+            <input type="text" id="admName" placeholder="VD: Trường Tiểu học Thái Sơn">
           </div>
           <div class="adm-row">
             <div class="adm-field">
               <label>Địa chỉ</label>
-              <input type="text" id="admAddr" placeholder="VD: Xã [tên xã], Tỉnh [tên tỉnh]">
+              <input type="text" id="admAddr" placeholder="VD: Xã Quảng Châu, Tỉnh Nghệ An">
             </div>
             <div class="adm-field">
               <label>Năm học</label>
@@ -1190,7 +1195,7 @@ function pwToggle(btn){
               <h4 style="margin:0 0 10px;font-size:.85rem;color:#1e40af;border-bottom:1px solid #e2e8f0;padding-bottom:6px">🏠 Địa chỉ</h4>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
                 <div class="adm-field"><label>Tỉnh/Thành phố</label><input type="text" id="hsf-tinh" placeholder="Nghệ An"></div>
-                <div class="adm-field"><label>Xã/Phường</label><input type="text" id="hsf-xa" placeholder="VD: [tên xã]"></div>
+                <div class="adm-field"><label>Xã/Phường</label><input type="text" id="hsf-xa" placeholder="Thái Sơn"></div>
                 <div class="adm-field"><label>Tổ/Thôn/Xóm</label><input type="text" id="hsf-to"></div>
                 <div class="adm-field" style="grid-column:1/-1"><label>Nơi sinh</label><input type="text" id="hsf-noisinh"></div>
               </div>
@@ -1501,7 +1506,7 @@ function pwToggle(btn){
       <div class="logo" style="color:white"><div class="logo-mark">📚</div><span id="navSchoolName">Tiểu học ...</span></div>
       <p id="footerAbout">Hồ sơ số chính thức của Trường Tiểu học — vui lòng cập nhật thông tin trong Admin.</p>
     </div>
-    <div><h5>Liên kết</h5><a href="#home">Trang chủ</a><a href="#records">Hồ sơ số</a><a href="javascript:void(0)" onclick="return showKdcl(event)">Hệ thống KĐCL - TĐG</a><a href="javascript:void(0)" onclick="return showQlcl(event)">QL Chất lượng</a><a href="#teachers">Hồ sơ CBGVNV</a><a href="#classes">Quản lý HS</a></div>
+    <div><h5>Liên kết</h5><a href="#about">Giới thiệu</a><a href="javascript:void(0)" onclick="return openHeThongVanBan(event)">Hệ thống văn bản</a><a href="#records">Hồ sơ số</a><a href="javascript:void(0)" onclick="return showKdcl(event)">Hệ thống KĐCL - TĐG</a><a href="javascript:void(0)" onclick="return showQlcl(event)">QL Chất lượng</a><a href="#teachers">Hồ sơ CBGVNV</a><a href="#classes">Quản lý HS</a></div>
     <div><h5>Phụ huynh</h5><a href="#">Học bạ số</a><a href="#">Lịch học</a><a href="#">Hoạt động</a><a href="#">Học bạ</a></div>
     <div><h5>Kết nối</h5><a href="#">Facebook</a><a href="#">Zalo OA</a><a href="#">YouTube</a><a href="#">Hotline</a></div>
   </div>
@@ -1514,14 +1519,11 @@ function pwToggle(btn){
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" defer></script>
 <script>
   // ====================================================================
-  // 🔗 URL API — Multi-School (Phương án D)
+  // 🔗 URL API (Google Apps Script /exec) — DÁN URL CỦA BẠN
   // ====================================================================
-  // KHÔNG hard-code URL ở đây nữa. boot.js đã set window.API_URL từ schools.json
-  // dựa vào ?school=<code>. Mỗi trường có 1 URL Apps Script riêng được khai báo
-  // trong schools.json.
-  //
-  // Giữ biến API_URL global (var, không const) để code cũ còn dùng được.
-  var API_URL = window.API_URL || '';
+  // ⚠️ Đây là chỗ DUY NHẤT mỗi trường cần sửa: dán URL Web App của bạn.
+  // Tất cả logic JS khác đã được tách ra app.js (tự động tải sau).
+  const API_URL = "https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec";
 </script>
 
 </div><!-- /#view-hoso -->
@@ -1948,7 +1950,7 @@ const LS_AUTH = 'tdgth_auth_v1';  // { hash, expiresAt } — token lưu khi user
 const SS_AUTH = 'tdgth_auth_session_v1';  // sessionStorage — token phiên hiện tại
 
 // URL backend Apps Script hard-coded — user không cần cấu hình.
-const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxS-M_WE3zkT7gR5kIuyka1DOOpGfgPCJInnpplpsik_RRfBQ6ULUDA9l8xlTVNgU_y/exec';
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec';
 
 const loadLS = (k, fb = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } };
 const saveLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
@@ -5753,7 +5755,7 @@ function MockTopbar({ activeTab = 'dashboard' }) {
         <span className={`mock-tab ${activeTab==='plan'?'active':''}`}>📅 Kế hoạch</span>
       </div>
       <div style={{flex:1}}/>
-      <span className="mock-pill">🏫 {(typeof window!=='undefined' && window.SCHOOL && window.SCHOOL.shortName) ? `Trường ${window.SCHOOL.shortName}` : 'Trường TH ...'} · 2025-2026</span>
+      <span className="mock-pill">🏫 Trường TH Thái Sơn · 2025-2026</span>
     </div>
   );
 }
@@ -5882,16 +5884,16 @@ function HelpSchool({ setModal, onClose }) {
       <div className="help-mockup">
         <div className="help-mockup-label">Click pill trên thanh tiêu đề</div>
         <MockTopbar/>
-        <p style={{fontSize:12,color:'var(--brand-600)',margin:'6px 0 0',fontWeight:500}}>↑ Click pill "🏫 Trường ..." (hoặc "Chưa đặt tên trường")</p>
+        <p style={{fontSize:12,color:'var(--brand-600)',margin:'6px 0 0',fontWeight:500}}>↑ Click pill "🏫 Trường TH Thái Sơn · 2025-2026" (hoặc "Chưa đặt tên trường")</p>
       </div>
 
       <h3>📋 Các trường thông tin</h3>
       <p><b>Bắt buộc</b> (có dấu <span style={{color:'var(--rose)'}}>*</span>): Tên trường, Hiệu trưởng, Xã/Phường, Tỉnh/Thành phố.</p>
       <p><b>Khuyến nghị đầy đủ</b>:</p>
       <ul>
-        <li>Tên trường: nhập đầy đủ gồm "Trường". VD: <code>Trường Tiểu học [tên trường]</code></li>
+        <li>Tên trường: nhập đầy đủ gồm "Trường". VD: <code>Trường Tiểu học Thái Sơn</code></li>
         <li>Địa chỉ cụ thể: thôn/xóm/đường (không cần xã vì đã có field riêng)</li>
-        <li>Xã/Phường: VD <code>Xã [tên xã]</code> — <b>KHÔNG điền huyện</b> (cải cách 2 cấp 2025)</li>
+        <li>Xã/Phường: VD <code>Xã Quảng Châu</code> — <b>KHÔNG điền huyện</b></li>
         <li>Mức đánh giá đăng ký: 1 (tối thiểu) · 2 (cấp độ 2) · 3 (chuẩn QG Mức 1) · 4 (chuẩn QG Mức 2)</li>
         <li>Quy mô: Số lớp, HS, GV, NV năm hiện tại</li>
         <li>Tick "Vùng khó khăn" nếu trường thuộc xã đặc biệt khó khăn (ảnh hưởng tỷ lệ % của Tiêu chí 2.2 và 5.5)</li>
@@ -6272,7 +6274,7 @@ function HelpDrive() {
       <div className="help-mockup">
         <div className="help-mockup-label">Modal "Báo cáo trên Google Drive"</div>
         <div style={{padding:8,border:'1px solid var(--line)',borderRadius:6,marginBottom:6,fontSize:11}}>
-          <div style={{fontWeight:600}}>{(typeof window!=='undefined' && window.SCHOOL && window.SCHOOL.shortName) ? `Trường ${window.SCHOOL.shortName}` : 'Trường TH ...'} · <span style={{color:'var(--brand-600)'}}>2025-2026</span></div>
+          <div style={{fontWeight:600}}>Trường TH Thái Sơn · <span style={{color:'var(--brand-600)'}}>2025-2026</span></div>
           <div style={{color:'var(--faint)',fontSize:10}}>Tiểu học · Nghệ An · HT: Nguyễn Văn A · 28 mục · Cập nhật: 19/04/2026 14:30</div>
           <div style={{marginTop:4}}><span className="mock-btn soft">☁↓ Mở</span> <span className="mock-btn" style={{background:'transparent',color:'var(--faint)',border:'1px solid var(--line)'}}>🗑 Xoá</span></div>
         </div>
@@ -6445,7 +6447,7 @@ function HelpAuth({ setModal, onClose }) {
           <div style={{background:'linear-gradient(135deg,#0c5da5,#1470bd)',color:'#fff',padding:12,borderRadius:6,textAlign:'center',marginBottom:10}}>
             <div style={{fontSize:20}}>🔐</div>
             <div style={{fontSize:13,fontWeight:700}}>Đăng nhập Admin</div>
-            <div style={{fontSize:10.5,opacity:0.85,marginTop:3}}>{(typeof window!=='undefined' && window.SCHOOL && window.SCHOOL.shortName) ? `Trường ${window.SCHOOL.shortName}` : 'Trường TH ...'}</div>
+            <div style={{fontSize:10.5,opacity:0.85,marginTop:3}}>Trường TH Thái Sơn</div>
           </div>
           <div style={{fontSize:11,color:'var(--faint)',marginBottom:4}}>Mật khẩu admin</div>
           <div style={{border:'1px solid var(--line)',padding:'6px 8px',borderRadius:4,fontSize:11,color:'var(--faint)'}}>••••••••</div>
@@ -6973,8 +6975,8 @@ function SchoolInfoModal({ schoolInfo, onSave, onClose }) {
         <div className="modal-b">
           <div className="field">
             <label>Tên trường <span className="req">*</span></label>
-            <input value={info.name} onChange={e => upd('name', e.target.value)} placeholder="VD: Trường Tiểu học [tên]"/>
-            <div className="hint">Nhập đầy đủ gồm chữ "Trường". VD: "Trường Tiểu học An Bình".</div>
+            <input value={info.name} onChange={e => upd('name', e.target.value)} placeholder="VD: Trường Tiểu học Thái Sơn"/>
+            <div className="hint">Nhập đầy đủ gồm chữ "Trường". VD: "Trường Tiểu học Thái Sơn".</div>
           </div>
           <div className="grid2">
             <div className="field"><label>Hiệu trưởng <span className="req">*</span></label>
@@ -6989,7 +6991,7 @@ function SchoolInfoModal({ schoolInfo, onSave, onClose }) {
               <input value={info.address} onChange={e => upd('address', e.target.value)} placeholder="Thôn/xóm, đường (nếu có)"/>
             </div>
             <div className="field"><label>Xã/Phường <span className="req">*</span></label>
-              <input value={info.ward} onChange={e => upd('ward', e.target.value)} placeholder="VD: Xã [tên xã]"/>
+              <input value={info.ward} onChange={e => upd('ward', e.target.value)} placeholder="VD: Xã Quảng Châu"/>
             </div>
           </div>
           <div className="grid3">
@@ -7585,7 +7587,6 @@ else boot();
 
 
 <!-- ⭐ Logic JS chính — tách ra để cache hiệu quả + dễ maintain (Refactor 2026-05-05) -->
-<script src="app.js?v=2026.05.12-fix-phone" defer></script>
-<script src="wizard.js?v=2026.05.12-fix-needswizard" defer></script>
+<script src="app.js?v=2026.05.11-mobile-guide" defer></script>
 </body>
 </html>

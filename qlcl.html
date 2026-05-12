@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" data-page="qlcl">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Quản lý Chất lượng GDTH</title>
-<script src="boot.js?v=2026.05.11-multischool"></script>
+<title>Quản lý Chất lượng GDTH — TH Thái Sơn</title>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" defer></script>
@@ -44,7 +43,7 @@ function pwToggle(btn){
 <div class="lbox">
   <div class="lbox-logo">
     <div class="icon">🏫</div>
-    <h2 data-school-bind="name">Trường Tiểu học ...</h2>
+    <h2>Trường Tiểu học Thái Sơn</h2>
   </div>
   <div class="lbox-sub">Hệ thống Quản lý Chất lượng Giáo dục Tiểu học<br>Năm học 2025–2026</div>
   <div class="lerr" id="lerr"></div>
@@ -68,7 +67,7 @@ function pwToggle(btn){
     <div class="sb-brand">
       <div class="sb-brand-icon">🏫</div>
       <div>
-        <h1 data-school-bind="shortName">TH ...</h1>
+        <h1>TH Thái Sơn</h1>
         <p>QLCL GDTH · v3.0</p>
       </div>
     </div>
@@ -163,7 +162,7 @@ function pwToggle(btn){
     <div class="hdr-ky-ico">🎓</div>
     <div class="hdr-ky-info">
       <div class="hdr-ky-title" id="hky-title">Quản lý Hồ sơ Học sinh</div>
-      <div class="hdr-ky-sub" id="hky-sub"><span data-school-bind="name">Trường Tiểu học ...</span> · Năm học 2025–2026</div>
+      <div class="hdr-ky-sub" id="hky-sub">Trường Tiểu học Thái Sơn · Năm học 2025–2026</div>
     </div>
     <div class="hdr-ky-badge" id="hky-badge"><span class="dot"></span><span id="hky-period">Giữa HK2</span></div>
     <span id="dshs-refresh-badge" class="dshs-refresh-badge" style="display:none"><span class="spin">🔄</span> Đang cập nhật DSHS</span>
@@ -615,7 +614,7 @@ function pwToggle(btn){
 <!-- 2026-05-06: BỎ Modal Sửa HS — chuyển sang HSS Admin -->
 
 <!-- DỮ LIỆU -->
-<!-- ⭐ Data HS nạp từ Sheet HSS của trường (qua API_URL) -->
+<!-- ⭐ Data HS thật của TH Thái Sơn (864 HS, khôi phục từ template QLCL standalone) -->
 <!-- 2026-05-07 Phase 3: _d_sb inline da xoa. DSHS fetch real-time tu HSS qua loadDSHSFromHSS() trong qlcl-app.js -->
 <script type="application/json" id="_d_subj">{"1":[["Toán","mon_Toán","diem_Toán",true],["Tiếng Việt","mon_Tiếng_việt","diem_Tiếng_việt",true],["Đạo đức","mon_Đạo_đức","",false],["Tự nhiên & XH","mon_Tự_nhiên_và_xã_hội","",false],["Ngoại ngữ","mon_Ngoại_ngữ","",false],["Tiếng dân tộc","mon_Tiếng_dân_tộc","",false],["Tin học","mon_TH-CN_Tin_học","",false],["Âm nhạc","mon_Nghệ_thuật_Âm_nhạc","",false],["Mĩ thuật","mon_Nghệ_thuật_Mĩ_thuật","",false],["HĐTN","mon_Hoạt_động_trải_nghiệm","",false],["Thể chất","mon_Giáo_dục_thể_chất","",false]],"2":[["Toán","mon_Toán","diem_Toán",true],["Tiếng Việt","mon_Tiếng_việt","diem_Tiếng_việt",true],["Đạo đức","mon_Đạo_đức","",false],["Tự nhiên & XH","mon_Tự_nhiên_và_xã_hội","",false],["Ngoại ngữ","mon_Ngoại_ngữ","",false],["Tiếng dân tộc","mon_Tiếng_dân_tộc","",false],["Tin học","mon_TH-CN_Tin_học","",false],["Âm nhạc","mon_Nghệ_thuật_Âm_nhạc","",false],["Mĩ thuật","mon_Nghệ_thuật_Mĩ_thuật","",false],["HĐTN","mon_Hoạt_động_trải_nghiệm","",false],["Thể chất","mon_Giáo_dục_thể_chất","",false]],"3":[["Toán","mon_Toán","diem_Toán",true],["Tiếng Việt","mon_Tiếng_việt","diem_Tiếng_việt",true],["Đạo đức","mon_Đạo_đức","",false],["Tự nhiên & XH","mon_Tự_nhiên_và_xã_hội","",false],["Ngoại ngữ","mon_Ngoại_ngữ","diem_Ngoại_ngữ",true],["Tin học","mon_TH-CN_Tin_học","diem_TH-CN_Tin_học",true],["Tiếng dân tộc","mon_Tiếng_dân_tộc","",false],["Công nghệ","mon_TH-CN_Công_nghệ","diem_TH-CN_Công_nghệ",true],["Âm nhạc","mon_Nghệ_thuật_Âm_nhạc","",false],["Mĩ thuật","mon_Nghệ_thuật_Mĩ_thuật","",false],["HĐTN","mon_Hoạt_động_trải_nghiệm","",false],["Thể chất","mon_Giáo_dục_thể_chất","",false]],"4":[["Toán","mon_Toán","diem_Toán",true],["Tiếng Việt","mon_Tiếng_việt","diem_Tiếng_việt",true],["Đạo đức","mon_Đạo_đức","",false],["Lịch sử - Địa lí","mon_Lịch_sử_và_Địa_lí","diem_Lịch_sử_và_Địa_lí",true],["Ngoại ngữ","mon_Ngoại_ngữ","diem_Ngoại_ngữ",true],["Tin học","mon_TH-CN_Tin_học","diem_TH-CN_Tin_học",true],["Khoa học","mon_Khoa_học","diem_Khoa_học",true],["Tiếng dân tộc","mon_Tiếng_dân_tộc","",false],["Công nghệ","mon_TH-CN_Công_nghệ","diem_TH-CN_Công_nghệ",true],["Âm nhạc","mon_Nghệ_thuật_Âm_nhạc","",false],["Mĩ thuật","mon_Nghệ_thuật_Mĩ_thuật","",false],["HĐTN","mon_Hoạt_động_trải_nghiệm","",false],["Thể chất","mon_Giáo_dục_thể_chất","",false]],"5":[["Toán","mon_Toán","diem_Toán",true],["Tiếng Việt","mon_Tiếng_việt","diem_Tiếng_việt",true],["Đạo đức","mon_Đạo_đức","",false],["Lịch sử - Địa lí","mon_Lịch_sử_và_Địa_lí","diem_Lịch_sử_và_Địa_lí",true],["Ngoại ngữ","mon_Ngoại_ngữ","diem_Ngoại_ngữ",true],["Tin học","mon_TH-CN_Tin_học","diem_TH-CN_Tin_học",true],["Khoa học","mon_Khoa_học","diem_Khoa_học",true],["Tiếng dân tộc","mon_Tiếng_dân_tộc","",false],["Công nghệ","mon_TH-CN_Công_nghệ","diem_TH-CN_Công_nghệ",true],["Âm nhạc","mon_Nghệ_thuật_Âm_nhạc","",false],["Mĩ thuật","mon_Nghệ_thuật_Mĩ_thuật","",false],["HĐTN","mon_Hoạt_động_trải_nghiệm","",false],["Thể chất","mon_Giáo_dục_thể_chất","",false]]}</script>
 <script type="application/json" id="_d_nl">[["Tự chủ và tự học","nl_Tự_chủ_và_tự_học"],["Giao tiếp và hợp tác","nl_Giao_tiếp_và_hợp_tác"],["Giải quyết vấn đề và sáng tạo","nl_Giải_quyết_vấn_đề_và_sáng_tạo"],["Ngôn ngữ","nl_Ngôn_ngữ"],["Tính toán","nl_Tính_toán"],["Khoa học","nl_Khoa_học"],["Thẩm mĩ","nl_Thẩm_mĩ"],["Thể chất","nl_Thể_chất"]]</script>
@@ -623,12 +622,13 @@ function pwToggle(btn){
 <!-- JAVASCRIPT -->
 <script>
   // ====================================================================
-  // 🔗 URL API — Multi-School (boot.js đã set window.API_URL từ schools.json)
+  // 🔗 URL API — DÙNG CHUNG với index.html (1 Sheet + 1 Apps Script HSS)
   // ====================================================================
-  // Phương án D (Multi-School): KHÔNG hard-code URL. Mỗi trường có 1 entry
-  // trong schools.json với apiUrl riêng. boot.js parse ?school=<code> và set
-  // window.API_URL trước khi qlcl-app.js chạy.
-  var API_URL = window.API_URL || '';
+  // Phương án D-3 (Final): toàn hệ thống dùng 1 Sheet + 1 Apps Script bound.
+  // QLCL data đã được copy 9 tab từ Sheet THDienLien_05.2026 → Sheet HSS qua
+  // hàm migrateQlclFromExternal trong Code.gs. Backend QLCL action (getGrades,
+  // saveGrade, ...) đã merge vào Code.gs HSS với prefix _qt internal.
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec';
 </script>
 
 <!-- ⭐ Logic JS chính QLCL v2 — tách ra để cache + maintain (Refactor 2026-05-05) -->

@@ -685,7 +685,7 @@
 
   /* ===== HSS Tiểu học — Navy theme (unified 2026-05-07) ===== */
   /* Tên biến giữ nguyên (--g1..--g-deep) để không phải sửa toàn bộ CSS;
-     giá trị đổi từ green sang navy. Theme mặc định (mỗi trường có thể override qua biến --school-brand boot.js set từ schools.json primaryColor) đã chọn
+     giá trị đổi từ green sang navy. Thầy Chung Trần (TH Thái Sơn) đã chọn
      navy là theme duy nhất, đồng bộ với KĐCL/QLCL. */
   :root{--g1:#1E4A8F;--g2:#163E78;--g3:#0F2D5C;--g-deep:#081F4D;--cream:#f0f5fc;--ink:#0A1F3D;--accent:#FBBF24;--coral:#f59e0b;--hero-spot1:#2A5AA0;--hero-spot2:#1F4A8F;--footer-bg:#061838}
   *{box-sizing:border-box;margin:0;padding:0}

@@ -3,15 +3,16 @@
  qlcl-app.js — Logic Quản lý Chất lượng Giáo dục Tiểu học
 ============================================================================
  Tách từ template QLCL của Chung Trần (May 2026) → 3 file FE riêng để host
- cùng repo với hệ thống Hồ sơ số (Multi-School template, kiến trúc D - Hybrid + Public Registry).
- KHÔNG hard-code tên trường — đọc từ window.SCHOOL (boot.js set từ schools.json).
- Comment lịch sử: phương án D-2 — 2 backend
+ cùng repo với hệ thống Hồ sơ số TH Thái Sơn (Phương án D-2: 2 backend
  song song).
 
- BACKEND chung với index.html (HSS + KĐCL + QLCL):
-   • 1 Apps Script duy nhất bound với Sheet HSS của trường
-   • API_URL được set bởi boot.js (đọc từ schools.json theo ?school=<code>)
-   • QLCL data (9 tab Q_*) merge vào cùng Sheet — không còn Sheet QLCL riêng
+ BACKEND độc lập:
+   • Apps Script project: QLCL_V3.0
+   • Bound với Sheet: THDienLien_05.2026
+   • API_URL: được khai báo inline trong qlcl.html
+
+ KHÔNG dùng chung backend với index.html (HSS + KĐCL). Lý do: data 3 tháng
+ đã sẵn ở Sheet THDienLien_05.2026 với schema wide format, không cần migrate.
 
  Auth bridge: đọc localStorage 'th_auth_v1' do index.html set khi user click
  nút "QL Chất lượng" — cho phép qlcl.html biết user là HT/GV để filter
@@ -40,7 +41,7 @@
 // └──────────────────────────────────────────────────────────┘
 var APP_VERSION='3.2';
 // ★★★ URL Web App HSS (dùng chung với index.html — 1 Sheet, 1 Apps Script) ★★★
-var DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbxS-M_WE3zkT7gR5kIuyka1DOOpGfgPCJInnpplpsik_RRfBQ6ULUDA9l8xlTVNgU_y/exec';
+var DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbwTwqzXPUNzeLnnneoE8WjOJKJvk9bIfyxUgTsh-wcm4SUZnsKE_AmELfunPFnI3pmy1w/exec';
 
 // 2026-05-07: DSHS không còn inline — fetch real-time từ HSS qua action 'students'.
 //   Single source of truth = Sheet "DS HocSinh" (HSS module).
@@ -1237,7 +1238,7 @@ function createMauChuan(){
   // Row 5+: DATA
   // (Hướng dẫn nhập đã chuyển sang sheet "Huong_Dan" riêng — giống mẫu CSDL ngành)
   var R_HDR=1, R_KEY=4, R_DATA=5;
-  var schoolName=localStorage.getItem('school_name_full')||(window.SCHOOL&&window.SCHOOL.name&&window.SCHOOL.name.toUpperCase())||'TRƯỜNG TIỂU HỌC ...';
+  var schoolName=localStorage.getItem('school_name_full')||'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
   var namHoc='2025-2026'; // TODO: đọc từ Config sheet
 
   // ── ROW 0-2: Headers ──
@@ -1400,7 +1401,7 @@ function dlMauGV(){
   // Row 4+: DATA
   // (Hướng dẫn nhập đã chuyển sang sheet "Huong_Dan" riêng)
   var R_HDR_GROUP=1, R_HDR_NAME=2, R_KEY=3, R_DATA=4;
-  var schoolName=localStorage.getItem('school_name_full')||(window.SCHOOL&&window.SCHOOL.name&&window.SCHOOL.name.toUpperCase())||'TRƯỜNG TIỂU HỌC ...';
+  var schoolName=localStorage.getItem('school_name_full')||'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
   var namHoc='2025-2026';
 
   // ROW 0: Title (xem sheet "Huong_Dan" để biết quy tắc nhập)
@@ -2186,7 +2187,7 @@ function _hssWizardStepHTML(step){
     '<div style="font-size:13px;color:var(--slate2);line-height:1.7">'+
       '<div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:10px">📦 Bước 1: Chuẩn bị thư mục extension</div>'+
       '<p>Trên máy của thầy/cô đã có sẵn thư mục extension. Đường dẫn:</p>'+
-      '<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:10px;font-family:monospace;font-size:11.5px;color:#1e40af;margin:10px 0;word-break:break-all">…\\HoSoSo\\hss-sync-extension</div>'+
+      '<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:10px;font-family:monospace;font-size:11.5px;color:#1e40af;margin:10px 0;word-break:break-all">…\\THDienLien\\hss-sync-extension</div>'+
       '<p>Nếu chưa có, nhờ Nhà trường gửi file <strong>hss-sync-extension-v2.zip</strong> rồi giải nén ra một thư mục cố định (vd: Documents, Desktop).</p>'+
       '<div style="margin-top:14px;padding:10px 12px;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:6px;font-size:11.5px;color:#1e3a8a">'+
         '💡 <strong>Lưu ý:</strong> KHÔNG xoá thư mục này sau khi cài. Chrome cần đường dẫn thật để chạy extension.'+
@@ -2947,9 +2948,7 @@ function _rptSet(ws,r,c,val,style){
 function _rptMerge(ws,sr,sc,er,ec){if(!ws['!merges'])ws['!merges']=[];ws['!merges'].push({s:{r:sr,c:sc},e:{r:er,c:ec}});}
 function _kqStyle(kq){return kq==='HTXS'?_RPT.htxs:kq==='HTT'?_RPT.htt:kq==='HT'?_RPT.ht:kq==='CHT'?_RPT.cht:_RPT.dataC;}
 function _pctStyle(pct){return pct>=90?_RPT.pctGood:pct>=70?_RPT.pctWarn:_RPT.pctBad;}
-function _rptSchool(){return localStorage.getItem('school_name_full')||(window.SCHOOL&&window.SCHOOL.name)||'Trường Tiểu học ...';}
-function _rptXa(){return localStorage.getItem('school_xa')||(window.SCHOOL&&window.SCHOOL.xa)||'...';}
-function _rptTinh(){return localStorage.getItem('school_tinh')||(window.SCHOOL&&window.SCHOOL.tinh)||'Nghệ An';}
+function _rptSchool(){return localStorage.getItem('school_name_full')||'Trường Tiểu học Thái Sơn';}
 function _rptPeriodName(){var p=PERIODS.find(function(p){return p.id===curPeriod;});return p?p.name:'Cuối năm';}
 function _rptDate(){var d=new Date();return 'Ngày '+d.getDate()+' tháng '+(d.getMonth()+1)+' năm '+d.getFullYear();}
 
@@ -3128,7 +3127,7 @@ function expTKXL(){
   // ── Chữ ký ──
   R++;
   var ht=localStorage.getItem('hieu_truong')||'';
-  _rptSet(ws,R,0,'',{}); _rptSet(ws,R,8,_rptXa()+', '+_rptDate(),_rptS(_RPT.sign));
+  _rptSet(ws,R,0,'',{}); _rptSet(ws,R,8,'Thái Sơn, '+_rptDate(),_rptS(_RPT.sign));
   for(var i=9;i<COLS;i++) _rptSet(ws,R,i,'',{});
   _rptMerge(ws,R,8,R,COLS-1);
   R++;
@@ -3232,8 +3231,8 @@ function openHB(idx){
   h+=_liInp('hb_so_dang_bo',  'Sổ đăng bộ',           llSoDB,    'VD: 671/2024');
   h+=_liInp('hb_ngay_nhap_hoc','Ngày nhập học',       llNNH,     'dd/mm/yyyy');
   h+=_liInp('hb_noi_sinh',    'Nơi sinh',             llNoiSinh, 'VD: BV Hữu nghị Đa khoa Nghệ An', s.noi_sinh || '');
-  h+=_liInp('hb_que_quan',    'Quê quán',             llQueQuan, 'VD: Xã '+_rptXa()+', tỉnh '+_rptTinh(), s.que_quan || '');
-  h+=_liInp('hb_noi_o',       'Nơi ở hiện nay',       llNoiO,    'VD: Xóm 6, xã '+_rptXa()+'...',     s.cho_o || '');
+  h+=_liInp('hb_que_quan',    'Quê quán',             llQueQuan, 'VD: Xã Quảng Châu, tỉnh Nghệ An', s.que_quan || '');
+  h+=_liInp('hb_noi_o',       'Nơi ở hiện nay',       llNoiO,    'VD: Xóm 6, xã Quảng Châu...',     s.cho_o || '');
   h+=_liInp('hb_giam_ho',     'Người giám hộ (nếu có)', llGiamHo, '');
   h+=_liInp('hb_ho_cha',      'Họ và tên cha',        llCha,     '', s.cha || '');
   h+=_liInp('hb_ho_me',       'Họ và tên mẹ',         llMe,      '', s.me || '');
@@ -3586,8 +3585,8 @@ function _buildHocBaData(s){
   var nx = nhanXet[s.ma] || {};
   var k = parseInt(s.khoi);
   var sj = (SUBJ[String(k)] || SUBJ['1']).filter(function(x){ return x[1] !== 'mon_Tiếng_dân_tộc'; });
-  var school = _rptSchool();
-  var xa = 'Xã ' + _rptXa();
+  var school = localStorage.getItem('school_name_full') || 'Trường Tiểu học Thái Sơn';
+  var xa = 'Xã Quảng Châu';
   var tinh = 'Tỉnh Nghệ An';
   var nam_hoc = '2025-2026';
   // 2026-05-08: Hiệu trưởng — default "Nguyễn Thị Hòa" (đã có ở trang chủ Hồ sơ số)
@@ -3912,9 +3911,9 @@ async function _genHocBaZipAll(students){
 function _renderHocBa1HS(s, showCover){
   var g=grades[s.ma]||{}, kq=cTT(s.ma,s.khoi), nx=nhanXet[s.ma]||{};
   var k=parseInt(s.khoi), sj=(SUBJ[String(k)]||SUBJ['1']).filter(function(x){return x[1]!=='mon_Tiếng_dân_tộc';});
-  var school=_rptSchool();
+  var school=localStorage.getItem('school_name_full')||'Trường Tiểu học Thái Sơn';
   // 2026-05-07: Cải cách hành chính 2 cấp — bỏ huyện. Chỉ còn xã + tỉnh.
-  var xa='Xã '+_rptXa(), tinh='Tỉnh '+_rptTinh();
+  var xa='Xã Quảng Châu', tinh='Tỉnh Nghệ An';
   var namHoc='2025-2026';
   var ht=localStorage.getItem('hieu_truong')||'';
   var gvcn=nx.gvcn||'';
@@ -4298,8 +4297,8 @@ function hbExportExcel(){
 // 3. BẢNG TỔNG HỢP CHẤT LƯỢNG — WORD CHUẨN CÔNG VĂN
 // ═══════════════════════════════════════════════════════════════
 function expBangCLWord(){
-  var school=_rptSchool();
-  var addr=localStorage.getItem('school_addr')||('Xã '+_rptXa()+', Tỉnh '+_rptTinh());
+  var school=localStorage.getItem('school_name_full')||'Trường Tiểu học Thái Sơn';
+  var addr=localStorage.getItem('school_addr')||'Xã Quảng Châu, Tỉnh Nghệ An';
   var periodName=_rptPeriodName();
   var ht=localStorage.getItem('hieu_truong')||'';
   var now=new Date();
@@ -4403,7 +4402,7 @@ function expBangCLWord(){
   // Chữ ký
   html+='<br><br><table class="nb sign-tbl"><tr>';
   html+='<td style="width:50%"><br><b>Người lập biểu</b><br><i style="color:#888;font-size:11pt">(Ký, ghi rõ họ tên)</i><br><br><br><br><br><b>'+(CU?CU.hoten||CU.username:'')+'</b></td>';
-  html+='<td style="width:50%"><i>'+_rptXa()+', '+dateStr+'</i><br><b>Hiệu trưởng</b><br><i style="color:#888;font-size:11pt">(Ký, ghi rõ họ tên và đóng dấu)</i><br><br><br><br><br><b>'+ht+'</b></td>';
+  html+='<td style="width:50%"><i>Thái Sơn, '+dateStr+'</i><br><b>Hiệu trưởng</b><br><i style="color:#888;font-size:11pt">(Ký, ghi rõ họ tên và đóng dấu)</i><br><br><br><br><br><b>'+ht+'</b></td>';
   html+='</tr></table>';
 
   var pre='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
