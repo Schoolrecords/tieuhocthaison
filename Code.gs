@@ -1,9 +1,7 @@
 /**
  * =====================================================================================
  *  BACKEND CHUNG - HỆ THỐNG HỒ SƠ SỐ TRƯỜNG TIỂU HỌC
- *  Mặc định: trống (Multi-School template - kiến trúc D)
- *  → Wizard FE sẽ ghi tên trường, địa chỉ, HT/PHT, AUTH_TOKEN vào Sheet CauHinh
- *    khi admin mở web lần đầu
+ *  Mặc định: Trường Tiểu học Thái Sơn (đổi qua Admin → Thông tin trường)
  *  1 FILE DUY NHẤT gộp Router + HSS + TDG + QLCL v1 + QLCL Template + MOET
  *
  *  • Router    — doGet/doPost dispatch + setupAll tạo các tab cần thiết
@@ -96,9 +94,7 @@ const _HSS_POST_ACTIONS = ['updateHSS','updateMinhChung','resetMinhChungSeed','i
   'addStudent','updateStudent','transferStudent','restoreStudent','deleteStudentPermanent','listStudentsAdmin',
   // 2026-05-09 — Phase 1 Hồ sơ số học bạ (chữ ký + dấu trường + xuất Drive + zip cả lớp)
   'uploadSignature','deleteSignature','getSignatures','getSignatureImage',
-  'exportHocBaSingle','zipClassFolder',
-  // 2026-05-11 — Multi-School (kiến trúc D)
-  'saveSchoolConfig','mergeMinhChungSeed'];
+  'exportHocBaSingle','zipClassFolder'];
 const _TDG_POST_ACTIONS  = ['ping','saveReport','loadReport','listReports','deleteReport','ai','claude','readDriveFolder'];
 // 2026-05-09 → 2026-05-10: QLCL v1 (long format) DEPRECATED — toàn bộ 22 action `qlcl*`
 //   (qlclSaveDiem, qlclSaveNhanXet, qlclSaveNLPC, qlclSaveXepLoai, sổ chủ nhiệm, ...) đã
@@ -109,7 +105,7 @@ const _TDG_POST_ACTIONS  = ['ping','saveReport','loadReport','listReports','dele
 //   Còn giữ: _qlclSheet + _qlclAudit (HSS Status audit), _qlclValidGrade_ (Template validate).
 //   Xem section QLCL HELPERS.
 // QLCL Template (wide format) — adopted từ project QLCL_V3.0 của Chung Trần (May 2026)
-// Backend chạy trên cùng Sheet HSS (data đã migrate từ Sheet QLCL nguồn → 9 tab gốc).
+// Backend chạy trên cùng Sheet HSS (data đã migrate từ Sheet THThaiSon_05.2026 → 9 tab gốc).
 // Action name giữ nguyên template (không xung đột với QLCL v1 vì khác hẳn).
 // 2026-05-06 REFACTOR: QLCL không còn quản lý HS (CRUD HS chuyển hẳn sang HSS).
 //   → Bỏ 'saveStudentsBatch', 'deleteStudent' khỏi danh sách action.
@@ -605,19 +601,8 @@ function _renderStatusPage_() {
 //      "Cô/thầy GV: nhập mã <AUTH_TOKEN_GV> khi sửa điểm"
 //      "Riêng Ban giám hiệu: mã Admin là <AUTH_TOKEN_ADMIN>"
 //    Mã Admin tự động có toàn bộ quyền GV (không phải nhập 2 lần).
-// ⚠ Multi-School: KHÔNG hard-code AUTH_TOKEN ở đây.
-//    Khi Sheet CauHinh có key 'auth_token_gv' / 'auth_token_admin' → dùng giá trị đó.
-//    Khi chưa có (lần đầu chạy) → wizard sẽ prompt admin nhập rồi ghi vào Sheet.
-//    Const dưới đây chỉ là HẰNG fallback PHÒNG TRƯỜNG HỢP Sheet bị xóa key.
-const AUTH_TOKEN_GV_FALLBACK    = '';  // Để rỗng = từ chối GV login khi chưa wizard
-const AUTH_TOKEN_ADMIN_FALLBACK = '';  // Để rỗng = từ chối admin login khi chưa wizard
-
-function _getAuthTokenGV_()    { var c = _getCfgMap_(); return (c && c.auth_token_gv)    || AUTH_TOKEN_GV_FALLBACK; }
-function _getAuthTokenAdmin_() { var c = _getCfgMap_(); return (c && c.auth_token_admin) || AUTH_TOKEN_ADMIN_FALLBACK; }
-// Lưu ý: trước đây có dùng `var AUTH_TOKEN_GV; Object.defineProperty(this, 'AUTH_TOKEN_GV', ...)`
-// để giả lập "const động". Apps Script V8 runtime KHÔNG cho phép redefine biến `var`
-// ở global (non-configurable) → ném TypeError ngay khi load file. Đã gỡ bỏ trick này.
-// Mọi nơi cần đọc 2 mã → gọi trực tiếp _getAuthTokenGV_() / _getAuthTokenAdmin_().
+const AUTH_TOKEN_GV    = 'ThaiSon-2026';   // Mã GV — sửa điểm/nhận xét
+const AUTH_TOKEN_ADMIN = 'AdminTS-2026';    // Mã Admin — Admin panel + KĐCL + cả mã GV
 // ----------------------------------------------------------------------------
 //
 // 4 helper an toàn được gọi từ doPost và các hàm save:
@@ -693,8 +678,8 @@ function _getAuthTokens_() {
     propGV    = props.getProperty('AUTH_TOKEN_GV')    || '';
     propAdmin = props.getProperty('AUTH_TOKEN_ADMIN') || '';
   } catch (e) { /* ignore */ }
-  const tokGV    = propGV    || _getAuthTokenGV_();
-  const tokAdmin = propAdmin || _getAuthTokenAdmin_();
+  const tokGV    = propGV    || ((typeof AUTH_TOKEN_GV    === 'string') ? AUTH_TOKEN_GV    : '');
+  const tokAdmin = propAdmin || ((typeof AUTH_TOKEN_ADMIN === 'string') ? AUTH_TOKEN_ADMIN : '');
   return { tokGV: tokGV, tokAdmin: tokAdmin };
 }
 
@@ -1157,8 +1142,8 @@ function _auditLog(tab, entry) {
 
 /**
  * =====================================================================================
- *  HỒ SƠ SỐ - TRƯỜNG TIỂU HỌC (Multi-School template — kiến trúc D)
- *  KHÔNG hard-code tên trường. Wizard FE → Sheet CauHinh → backend đọc lại.
+ *  HỒ SƠ SỐ - TRƯỜNG TIỂU HỌC (Mặc định: Trường Tiểu học Thái Sơn)
+ *  Địa chỉ mẫu: Xã Đô Lương, Tỉnh Nghệ An
  *  Backend API: Google Apps Script (Container-bound)
  *
  *  💡 TEMPLATE NOTE: File này là template DÙNG CHUNG cho mọi trường tiểu học.
@@ -1192,8 +1177,8 @@ function _auditLog(tab, entry) {
 // 💡 LƯU Ý: Dữ liệu thực tế nên nhập qua website → Admin → Thông tin trường.
 // Các giá trị dưới đây CHỈ dùng khi sheet CauHinh chưa được điền.
 const SCHOOL_CONFIG = {
-  name:           '',
-  address:        '',
+  name:           'Trường Tiểu học Thái Sơn',
+  address:        'Xã Đô Lương, Tỉnh Nghệ An',
   phone:          '',
   email:          '',
   schoolYear:     '2025 - 2026',
@@ -1224,125 +1209,125 @@ const SHEET_MC     = 'MinhChung';
 const DATA_HSS = [
   ["", "1. HIỆU TRƯỞNG", "", "", ""],
   ["", "1.1. Kế hoạch", "", "", ""],
-  ["1", "1.1.1. Chiến lược phát triển giáo dục", "https://drive.google.com/drive/folders/1QiLsV0QD8KhevrxCTZqL7gJosz3GpGjb", "Hiệu trưởng", "1.1, 1.10"],
-  ["2", "1.1.2. Kế hoạch giáo dục nhà trường", "https://drive.google.com/drive/folders/1klnZ_4cLaP3uI09MrbkL6iycdbldDgKI", "Hiệu trưởng", "1.1, 1.8, 5.1"],
+  ["1", "1.1.1. Chiến lược phát triển giáo dục", "", "Hiệu trưởng", "1.1, 1.10"],
+  ["2", "1.1.2. Kế hoạch giáo dục nhà trường", "", "Hiệu trưởng", "1.1, 1.8, 5.1"],
   ["3", "1.1.3. Kế hoạch Phát triển giáo dục", "", "Hiệu trưởng", "1.1"],
-  ["4", "1.1.4. Kế hoạch Tháng - Tuần & các kế hoạch khác", "https://drive.google.com/drive/folders/1erdRBTNX6iM7CqL6YwEkeurFwX1PDy74", "Hiệu trưởng", "1.8"],
+  ["4", "1.1.4. Kế hoạch Tháng - Tuần & các kế hoạch khác", "", "Hiệu trưởng", "1.8"],
   ["", "1.2. Nghị quyết", "", "", ""],
-  ["5", "1.2.1. NQ về Kế hoạch phát triển nhà trường", "https://drive.google.com/drive/folders/1I_4OJ4z6VSSe7TnHGpeav7R-TkZ5Rbl5", "Hiệu trưởng", "1.1, 1.2"],
-  ["6", "1.2.2. NQ về Quy chế tổ chức và hoạt động", "https://drive.google.com/drive/folders/1GSW0ojA5T8fnwd_b_7DQx2j-O6jUpyAI", "Hiệu trưởng", "1.2"],
-  ["7", "1.2.3. NQ về Tài chính và Tài sản", "https://drive.google.com/drive/folders/1lYld5GChxRPMZCHqJqC9SlL1xS8uFjrZ", "Hiệu trưởng", "1.2, 1.6"],
-  ["8", "1.2.4. NQ về Giám sát", "https://drive.google.com/drive/folders/1xZcuicYnXINk4L_tru1ylG3HPgJqSgB-", "Hiệu trưởng", "1.2"],
+  ["5", "1.2.1. NQ về Kế hoạch phát triển nhà trường", "", "Hiệu trưởng", "1.1, 1.2"],
+  ["6", "1.2.2. NQ về Quy chế tổ chức và hoạt động", "", "Hiệu trưởng", "1.2"],
+  ["7", "1.2.3. NQ về Tài chính và Tài sản", "", "Hiệu trưởng", "1.2, 1.6"],
+  ["8", "1.2.4. NQ về Giám sát", "", "Hiệu trưởng", "1.2"],
   ["", "1.3. Quy chế", "", "", ""],
-  ["9", "1.3.1. QC thực hiện dân chủ & QC chi tiêu nội bộ", "https://drive.google.com/drive/folders/1aahXyQedo296_q-mflnkyoC4abIdzYNM", "Hiệu trưởng", "1.6, 1.9"],
-  ["10", "1.3.2. QC chuyên môn, TĐ-KT & QL tài sản", "https://drive.google.com/drive/folders/1SHybRzxPshzODFIeEnQYw0jKjzOyP1gy", "Hiệu trưởng", "1.6, 1.8"],
+  ["9", "1.3.1. QC thực hiện dân chủ & QC chi tiêu nội bộ", "", "Hiệu trưởng", "1.6, 1.9"],
+  ["10", "1.3.2. QC chuyên môn, TĐ-KT & QL tài sản", "", "Hiệu trưởng", "1.6, 1.8"],
   ["11", "1.3.3. QC tổ chức và hoạt động nhà trường", "", "Hiệu trưởng", "1.4"],
   ["", "1.4. Quyết định", "", "", ""],
-  ["12", "1.4.1. QĐ về Tổ chức Nhân sự", "https://drive.google.com/drive/folders/1JxyHjIGxA92DhvqzQ57-OfymsGoT9YGC", "Hiệu trưởng", "1.4, 1.7"],
-  ["13", "1.4.2. QĐ thành lập các Hội đồng", "https://drive.google.com/drive/folders/1f9T6w8C_sxD40M4USDB_WsCAK6uPq670", "Hiệu trưởng", "1.4"],
-  ["14", "1.4.3. QĐ về Học sinh", "https://drive.google.com/drive/folders/17-XGFXAAPO_d8AjOihZmHkmCb-JpsgbG", "Hiệu trưởng", "1.5, 2.4"],
+  ["12", "1.4.1. QĐ về Tổ chức Nhân sự", "", "Hiệu trưởng", "1.4, 1.7"],
+  ["13", "1.4.2. QĐ thành lập các Hội đồng", "", "Hiệu trưởng", "1.4"],
+  ["14", "1.4.3. QĐ về Học sinh", "", "Hiệu trưởng", "1.5, 2.4"],
   ["", "1.5. Tài chính", "", "", ""],
-  ["15", "1.5.1. VB chỉ đạo, hướng dẫn Thu-Chi & QĐ Tài chính", "https://drive.google.com/drive/folders/1ylHxBh6W4F2SEapd2nbrGlom1-zTWBCk", "Hiệu trưởng", "1.6"],
-  ["16", "1.5.2. Công khai tài chính (TC, khoản thu, tài trợ, hỗ trợ)", "https://drive.google.com/drive/folders/1ydmNeCNwIlKJpEU1llBwJ2Uan0LRCnNg", "Hiệu trưởng", "1.6, 1.9"],
-  ["17", "1.5.3. Kế hoạch mua sắm, sửa chữa lớn trong năm", "https://drive.google.com/drive/folders/1rPo1sbNtfYL9V9O6Dj-Av_nT9X1raNGC", "Hiệu trưởng", "1.6, 3.5"],
+  ["15", "1.5.1. VB chỉ đạo, hướng dẫn Thu-Chi & QĐ Tài chính", "", "Hiệu trưởng", "1.6"],
+  ["16", "1.5.2. Công khai tài chính (TC, khoản thu, tài trợ, hỗ trợ)", "", "Hiệu trưởng", "1.6, 1.9"],
+  ["17", "1.5.3. Kế hoạch mua sắm, sửa chữa lớn trong năm", "", "Hiệu trưởng", "1.6, 3.5"],
   ["", "1.6. Tài sản", "", "", ""],
-  ["18", "1.6.1. Hồ sơ TS đầu vào: đất đai XDCB, mua sắm, biếu tặng", "https://drive.google.com/drive/folders/1x6zJ6_hxmnp-SFapXDX7kUOSfGSDBAw_", "Hiệu trưởng", "1.6, 3.1, 3.5"],
-  ["19", "1.6.2. Sổ sách theo dõi QL TS: Sổ TSCĐ, Sổ CC-DC", "https://drive.google.com/drive/folders/1fLRpGQGzPT4MdV96BXPBpKAPg8OmT2u2", "Hiệu trưởng", "1.6"],
-  ["20", "1.6.3. Hồ sơ cấp phát, sử dụng và bảo dưỡng tài sản", "https://drive.google.com/drive/folders/1piRgidXw8IZ3FxidkIsS7uLfvrfDbK_i", "Hiệu trưởng", "1.6, 3.5"],
-  ["21", "1.6.4. Hồ sơ kiểm kê, thanh lý và tiêu hủy tài sản", "https://drive.google.com/drive/folders/1LX-yaH4WODXY9eJl6zsmbJwgl4PF7Vt1", "Hiệu trưởng", "1.6"],
+  ["18", "1.6.1. Hồ sơ TS đầu vào: đất đai XDCB, mua sắm, biếu tặng", "", "Hiệu trưởng", "1.6, 3.1, 3.5"],
+  ["19", "1.6.2. Sổ sách theo dõi QL TS: Sổ TSCĐ, Sổ CC-DC", "", "Hiệu trưởng", "1.6"],
+  ["20", "1.6.3. Hồ sơ cấp phát, sử dụng và bảo dưỡng tài sản", "", "Hiệu trưởng", "1.6, 3.5"],
+  ["21", "1.6.4. Hồ sơ kiểm kê, thanh lý và tiêu hủy tài sản", "", "Hiệu trưởng", "1.6"],
   ["", "1.7. Tổ chức", "", "", ""],
-  ["22", "1.7.1. Sơ đồ tổ chức, QĐ thành lập Tổ & Phân công NV", "https://drive.google.com/drive/folders/1eivpSuH18d3kPeftvdgigOIOovvLs0lw", "Hiệu trưởng", "1.4, 1.7"],
-  ["23", "1.7.2. Hồ sơ viên chức & Hợp đồng lao động", "https://drive.google.com/drive/folders/1ZhRMo1BfYT2WljkliZaDagGy3Huh0tlh", "Hiệu trưởng", "1.7, 2.1, 2.2, 2.3"],
-  ["24", "1.7.3. Hồ sơ các Hội đồng (TĐKT, Tuyển sinh, TVCM, KL)", "https://drive.google.com/drive/folders/1MNe2Y_PYbjhAs3_h7ByUp8ZSIruiao-x", "Hiệu trưởng", "1.4, 1.7"],
+  ["22", "1.7.1. Sơ đồ tổ chức, QĐ thành lập Tổ & Phân công NV", "", "Hiệu trưởng", "1.4, 1.7"],
+  ["23", "1.7.2. Hồ sơ viên chức & Hợp đồng lao động", "", "Hiệu trưởng", "1.7, 2.1, 2.2, 2.3"],
+  ["24", "1.7.3. Hồ sơ các Hội đồng (TĐKT, Tuyển sinh, TVCM, KL)", "", "Hiệu trưởng", "1.4, 1.7"],
   ["", "1.8. Thi đua - Khen thưởng - Kỷ luật", "", "", ""],
-  ["25", "1.8.1. Hồ sơ phát động, đăng ký & giao ước thi đua", "https://drive.google.com/drive/folders/1FLbXvWdHJNKEEIeFFj1xy26ScvEpCprK", "Hiệu trưởng", "1.7, 2.2"],
-  ["26", "1.8.2. Hồ sơ xét khen thưởng GV, NV & Học sinh", "https://drive.google.com/drive/folders/1yBEFUIZZ6RItdmx0VAIExREvqbt2OzFq", "Hiệu trưởng", "1.7, 2.2, 2.4"],
-  ["27", "1.8.3. Hồ sơ Kỷ luật GV, NV & Học sinh", "https://drive.google.com/drive/folders/1tJE2wPRZDlbWmEd9vbm7_OO46A5OVjCG", "Hiệu trưởng", "1.7, 2.2, 2.4"],
-  ["28", "1.8.4. Hồ sơ Sáng kiến kinh nghiệm (SKKN)", "https://drive.google.com/drive/folders/1rZqL3uMZfOtBW9Lzp0E3mesnis7L3Hkf", "Hiệu trưởng", "2.2"],
+  ["25", "1.8.1. Hồ sơ phát động, đăng ký & giao ước thi đua", "", "Hiệu trưởng", "1.7, 2.2"],
+  ["26", "1.8.2. Hồ sơ xét khen thưởng GV, NV & Học sinh", "", "Hiệu trưởng", "1.7, 2.2, 2.4"],
+  ["27", "1.8.3. Hồ sơ Kỷ luật GV, NV & Học sinh", "", "Hiệu trưởng", "1.7, 2.2, 2.4"],
+  ["28", "1.8.4. Hồ sơ Sáng kiến kinh nghiệm (SKKN)", "", "Hiệu trưởng", "2.2"],
   ["", "1.9. Phối hợp", "", "", ""],
-  ["29", "1.9.1. Phối hợp An ninh trật tự & An toàn trường học", "https://drive.google.com/drive/folders/1B3bIPQZNkLHSrk4dZI6vY8XnvBfKxE90", "Hiệu trưởng", "1.10, 4.2"],
-  ["30", "1.9.2. Phối hợp Y tế & Chăm sóc sức khỏe", "https://drive.google.com/drive/folders/1zhtqHRJzvtHJt_7bjtuzcTFbaCPFyNi0", "Hiệu trưởng", "1.10, 4.2"],
-  ["31", "1.9.3. Phối hợp GD truyền thống & Khuyến học", "https://drive.google.com/drive/folders/111qkIO37UqJdZgi8GP7IYgaU7h7v-9XC", "Hiệu trưởng", "4.2, 5.4"],
+  ["29", "1.9.1. Phối hợp An ninh trật tự & An toàn trường học", "", "Hiệu trưởng", "1.10, 4.2"],
+  ["30", "1.9.2. Phối hợp Y tế & Chăm sóc sức khỏe", "", "Hiệu trưởng", "1.10, 4.2"],
+  ["31", "1.9.3. Phối hợp GD truyền thống & Khuyến học", "", "Hiệu trưởng", "4.2, 5.4"],
   ["", "1.10. Báo cáo", "", "", ""],
-  ["32", "1.10.1. BC định kỳ: Sơ kết HKI & Tổng kết năm học", "https://drive.google.com/drive/folders/1zs9nO0DRCAPgsrZAV9cbHREKkIYqE_8u", "Hiệu trưởng", "1.1, 1.8, 5.6"],
-  ["33", "1.10.2. BC Thống kê định kỳ (đầu, giữa, cuối năm)", "https://drive.google.com/drive/folders/1BLOsabOIxX61fZYfEuoKhayUKZMGTlNH", "Hiệu trưởng", "1.1, 5.6"],
-  ["34", "1.10.3. BC chuyên đề (QCDC, ANTH-ATGT, TV-TB)", "https://drive.google.com/drive/folders/1XIYnqPDpHcN8a3rcmcFoDzCfx499mW1v", "Hiệu trưởng", "1.9, 1.10, 3.6"],
-  ["35", "1.10.4. BC Đột xuất & Giải trình", "https://drive.google.com/drive/folders/1T7hbCIYLG86T0E2f8ZHSsOyCWmnMZ3hP", "Hiệu trưởng", "1.1"],
+  ["32", "1.10.1. BC định kỳ: Sơ kết HKI & Tổng kết năm học", "", "Hiệu trưởng", "1.1, 1.8, 5.6"],
+  ["33", "1.10.2. BC Thống kê định kỳ (đầu, giữa, cuối năm)", "", "Hiệu trưởng", "1.1, 5.6"],
+  ["34", "1.10.3. BC chuyên đề (QCDC, ANTH-ATGT, TV-TB)", "", "Hiệu trưởng", "1.9, 1.10, 3.6"],
+  ["35", "1.10.4. BC Đột xuất & Giải trình", "", "Hiệu trưởng", "1.1"],
   ["", "2. PHÓ HIỆU TRƯỞNG", "", "", ""],
   ["", "2.1. Hồ sơ Quản lý Học sinh", "", "", ""],
-  ["36", "2.1.1. Sổ đăng bộ & Học bạ học sinh", "https://drive.google.com/drive/folders/1YFfyJi6KM3zJ0Gjxvv3mSpkZgNOOIn64", "Phó Hiệu trưởng", "2.4, 5.6"],
+  ["36", "2.1.1. Sổ đăng bộ & Học bạ học sinh", "", "Phó Hiệu trưởng", "2.4, 5.6"],
   ["37", "2.1.2. Sổ theo dõi và đánh giá học sinh", "", "Phó Hiệu trưởng", "2.4, 5.6"],
   ["38", "2.1.3. Hồ sơ chuyển trường & tiếp nhận HS", "", "Phó Hiệu trưởng", "1.5, 2.4"],
   ["39", "2.1.4. Hồ sơ theo dõi Học sinh khuyết tật", "", "Phó Hiệu trưởng", "2.4, 5.2"],
   ["", "2.2. Kế hoạch chuyên môn", "", "", ""],
   ["40", "2.2.1. KH dạy học theo CTGDPT 2018", "", "Phó Hiệu trưởng", "1.8, 5.1"],
-  ["41", "2.2.2. KH bồi dưỡng thường xuyên", "https://drive.google.com/drive/folders/1aSi1t6bmhQ1U17cTTES_7IqitcHSH62G", "Phó Hiệu trưởng", "2.2"],
-  ["42", "2.2.3. KH Hội thi, Trải nghiệm, STEM, hướng nghiệp", "https://drive.google.com/drive/folders/1sDLEA9b0nCX8ys6e0t6hB6JdTs2ynRmp", "Phó Hiệu trưởng", "5.4, 5.5"],
-  ["43", "2.2.4. KH Phụ đạo HS chưa đạt & BD HS năng khiếu", "https://drive.google.com/drive/folders/1U9Y7e7PWSwWU8SZqSGHeD39BQBmofmAS", "Phó Hiệu trưởng", "5.2, 5.6"],
+  ["41", "2.2.2. KH bồi dưỡng thường xuyên", "", "Phó Hiệu trưởng", "2.2"],
+  ["42", "2.2.3. KH Hội thi, Trải nghiệm, STEM, hướng nghiệp", "", "Phó Hiệu trưởng", "5.4, 5.5"],
+  ["43", "2.2.4. KH Phụ đạo HS chưa đạt & BD HS năng khiếu", "", "Phó Hiệu trưởng", "5.2, 5.6"],
   ["44", "2.2.5. KH Giáo dục địa phương", "", "Phó Hiệu trưởng", "5.3"],
   ["", "2.3. Thời khóa biểu & Phân công", "", "", ""],
-  ["45", "2.3.1. Thời khóa biểu & Phân công chuyên môn", "https://drive.google.com/drive/folders/1P0fhWkWMtd5-yZcV9-kOH_ysZt8sdHTa", "Phó Hiệu trưởng", "1.4, 1.8, 5.1"],
-  ["46", "2.3.2. Phân công dạy thay", "https://drive.google.com/drive/folders/1aHG3GYS7plVttoqb4VcDHXJxuvrmT4YV", "Phó Hiệu trưởng", "1.7, 5.1"],
+  ["45", "2.3.1. Thời khóa biểu & Phân công chuyên môn", "", "Phó Hiệu trưởng", "1.4, 1.8, 5.1"],
+  ["46", "2.3.2. Phân công dạy thay", "", "Phó Hiệu trưởng", "1.7, 5.1"],
   ["", "2.4. Theo dõi chất lượng", "", "", ""],
-  ["47", "2.4.1. Ma trận & Đề kiểm tra định kỳ", "https://drive.google.com/drive/folders/15vJpV3mov--KZn5xlfkWA6UR-xiWhstu", "Phó Hiệu trưởng", "5.1, 5.6"],
-  ["48", "2.4.2. Tổng hợp Kết quả Chất lượng giáo dục", "https://drive.google.com/drive/folders/1Xkbmz7IPvFEoFrYEyAZ5fzAN1GuoigHD", "Phó Hiệu trưởng", "5.6"],
-  ["49", "2.4.3. Danh sách Khen thưởng học sinh", "https://drive.google.com/drive/folders/139Nu6io_NdvpZkz2AcomHP5Hna0QOU_a", "Phó Hiệu trưởng", "2.4, 5.6"],
+  ["47", "2.4.1. Ma trận & Đề kiểm tra định kỳ", "", "Phó Hiệu trưởng", "5.1, 5.6"],
+  ["48", "2.4.2. Tổng hợp Kết quả Chất lượng giáo dục", "", "Phó Hiệu trưởng", "5.6"],
+  ["49", "2.4.3. Danh sách Khen thưởng học sinh", "", "Phó Hiệu trưởng", "2.4, 5.6"],
   ["", "2.5. Phổ cập giáo dục Tiểu học", "", "", ""],
-  ["50", "2.5.1. Các văn bản chỉ đạo về công tác PCGD Tiểu học", "https://drive.google.com/drive/folders/1nLv1CknIqsA0u7Hwpv6HYE5rtTRwCepp", "Phó Hiệu trưởng", "1.5"],
-  ["51", "2.5.2. Hồ sơ PCGD Tiểu học (KH, BC, Tờ trình và các Biểu mẫu)", "https://drive.google.com/drive/folders/1Z6aR6r7TgcIwbFGgOdQV0G25APuHc0ig", "Phó Hiệu trưởng", "1.5"],
+  ["50", "2.5.1. Các văn bản chỉ đạo về công tác PCGD Tiểu học", "", "Phó Hiệu trưởng", "1.5"],
+  ["51", "2.5.2. Hồ sơ PCGD Tiểu học (KH, BC, Tờ trình và các Biểu mẫu)", "", "Phó Hiệu trưởng", "1.5"],
   ["", "2.6. Hồ sơ khác", "", "", ""],
-  ["52", "2.6.1. Hồ sơ Tuyển sinh vào lớp 1", "https://drive.google.com/drive/folders/1HErPYh7_9EXIGRzdbouMrg1nZKh5aJrz", "Phó Hiệu trưởng", "1.5, 2.4"],
-  ["53", "2.6.2. Hồ sơ SHCM trường & Kiểm tra nội bộ CM", "https://drive.google.com/drive/folders/1wtITeXXXkMSxh_u-RXbkfLQQkZUmJVr5", "Phó Hiệu trưởng", "1.8, 2.2"],
+  ["52", "2.6.1. Hồ sơ Tuyển sinh vào lớp 1", "", "Phó Hiệu trưởng", "1.5, 2.4"],
+  ["53", "2.6.2. Hồ sơ SHCM trường & Kiểm tra nội bộ CM", "", "Phó Hiệu trưởng", "1.8, 2.2"],
   ["", "3. TỔ CHUYÊN MÔN", "", "", ""],
   ["", "3.1. Kế hoạch môn học", "", "", ""],
-  ["54", "3.1.1. Kế hoạch môn học Lớp 1", "https://drive.google.com/drive/folders/16QR-h63G4qgoyJmQtM0j2c-ExVdt5bPf", "Tổ trưởng Tổ 1-2-3", "5.1"],
-  ["55", "3.1.2. Kế hoạch môn học Lớp 2", "https://drive.google.com/drive/folders/1BDnO73jo957_yfF29am6IvTYaQoITXrj", "Tổ trưởng Tổ 1-2-3", "5.1"],
-  ["56", "3.1.3. Kế hoạch môn học Lớp 3", "https://drive.google.com/drive/folders/1hmAFtJhv5r25s5d-epXXpKIdNDZJABMb", "Tổ trưởng Tổ 1-2-3", "5.1"],
-  ["57", "3.1.4. Kế hoạch môn học Lớp 4", "https://drive.google.com/drive/folders/1tMHbIT_9ZZL4tjzymTcUkK-kzpCTDpyR", "Tổ trưởng Tổ 4-5", "5.1"],
-  ["58", "3.1.5. Kế hoạch môn học Lớp 5", "https://drive.google.com/drive/folders/1f3gvHWJmwG8473l1SPguXWH_OGGQ2bep", "Tổ trưởng Tổ 4-5", "5.1"],
+  ["54", "3.1.1. Kế hoạch môn học Lớp 1", "", "Tổ trưởng Tổ 1-2-3", "5.1"],
+  ["55", "3.1.2. Kế hoạch môn học Lớp 2", "", "Tổ trưởng Tổ 1-2-3", "5.1"],
+  ["56", "3.1.3. Kế hoạch môn học Lớp 3", "", "Tổ trưởng Tổ 1-2-3", "5.1"],
+  ["57", "3.1.4. Kế hoạch môn học Lớp 4", "", "Tổ trưởng Tổ 4-5", "5.1"],
+  ["58", "3.1.5. Kế hoạch môn học Lớp 5", "", "Tổ trưởng Tổ 4-5", "5.1"],
   ["", "3.2. Sinh hoạt chuyên môn", "", "", ""],
-  ["59", "3.2.1. KH & Biên bản SHCM Tổ 1-2-3", "https://drive.google.com/drive/folders/1ilUWofemjvuG0sDgJSinTMnmFx--XBuI", "Tổ trưởng Tổ 1-2-3", "1.4, 2.2"],
-  ["60", "3.2.2. KH & Biên bản SHCM Tổ 4-5", "https://drive.google.com/drive/folders/1ZkjYgB8LynWVGlBiK1FqUE8OmyNDct-b", "Tổ trưởng Tổ 4-5", "1.4, 2.2"],
+  ["59", "3.2.1. KH & Biên bản SHCM Tổ 1-2-3", "", "Tổ trưởng Tổ 1-2-3", "1.4, 2.2"],
+  ["60", "3.2.2. KH & Biên bản SHCM Tổ 4-5", "", "Tổ trưởng Tổ 4-5", "1.4, 2.2"],
   ["61", "3.2.3. Sổ ghi chép hoạt động các Tổ Chuyên môn", "", "Tổ trưởng CM", "1.4, 2.2"],
   ["", "3.3. Đổi mới & Tài nguyên số", "", "", ""],
-  ["62", "3.3.1. Ngân hàng Đề kiểm tra & Thư viện Giáo án", "https://drive.google.com/drive/folders/1pU6zop_-eannRL111a3XPJ-PnugokAgZ", "Tổ trưởng CM", "5.1, 5.6"],
-  ["63", "3.3.2. Kho tranh ảnh, video & Tài liệu chuyên đề CM", "https://drive.google.com/drive/folders/1e7ucwZB1EiMd1oGhqsOjWqa434aJyJB7", "Tổ trưởng CM", "3.5, 5.1"],
+  ["62", "3.3.1. Ngân hàng Đề kiểm tra & Thư viện Giáo án", "", "Tổ trưởng CM", "5.1, 5.6"],
+  ["63", "3.3.2. Kho tranh ảnh, video & Tài liệu chuyên đề CM", "", "Tổ trưởng CM", "3.5, 5.1"],
   ["64", "3.3.3. Hồ sơ đổi mới PP dạy học & ứng dụng CNTT", "", "Tổ trưởng CM", "2.2, 5.1"],
   ["", "4. NHÓM HỒ SƠ HÀNH CHÍNH", "", "", ""],
   ["", "4.1. Văn thư", "", "", ""],
-  ["65", "4.1.1. Văn bản đến", "https://drive.google.com/drive/folders/1DDXAURPr86g51qPCmDL0gleF4n2nphOr", "Văn thư", "1.6"],
-  ["66", "4.1.2. Văn bản đi & Quản lý VB điện tử", "https://drive.google.com/drive/folders/1jks4LYbOiuK7kyPRndhNTUk98mEel2eh", "Văn thư", "1.6"],
-  ["67", "4.1.3. QĐ - Tờ trình (nội bộ) & Hồ sơ học vụ", "https://drive.google.com/drive/folders/1Cx_UjMfy_qJN27CFJ8cmYdICMqNOC9Uc", "Văn thư", "1.5, 1.6"],
-  ["68", "4.1.4. Biểu mẫu, quy trình & Lưu trữ thống kê", "https://drive.google.com/drive/folders/13AJerQQr98U6nKs41mdE_3ibEHzgCLmY", "Văn thư", "1.6"],
+  ["65", "4.1.1. Văn bản đến", "", "Văn thư", "1.6"],
+  ["66", "4.1.2. Văn bản đi & Quản lý VB điện tử", "", "Văn thư", "1.6"],
+  ["67", "4.1.3. QĐ - Tờ trình (nội bộ) & Hồ sơ học vụ", "", "Văn thư", "1.5, 1.6"],
+  ["68", "4.1.4. Biểu mẫu, quy trình & Lưu trữ thống kê", "", "Văn thư", "1.6"],
   ["", "4.2. Thư viện", "", "", ""],
-  ["69", "4.2.1. Hồ sơ PL-KH, sổ sách nghiệp vụ & kiểm kê TV", "https://drive.google.com/drive/folders/1ItNAlfWijIv9VhLnXjXLQzEZk5Vp89Wg", "Thủ thư", "3.6"],
+  ["69", "4.2.1. Hồ sơ PL-KH, sổ sách nghiệp vụ & kiểm kê TV", "", "Thủ thư", "3.6"],
   ["70", "4.2.2. Hồ sơ xây dựng và phát triển văn hóa đọc", "", "Thủ thư", "3.6, 5.5"],
   ["", "4.3. Thiết bị", "", "", ""],
-  ["71", "4.3.1. Danh mục-Kho TB, đăng ký Mượn-Trả & Báo hỏng", "https://drive.google.com/drive/folders/1RaEiWNiX5WmLxt75TOPuQEsiQAlfV-xk", "Cán bộ Thiết bị", "3.5"],
-  ["72", "4.3.2. KH mua sắm & kiểm kê thiết bị", "https://drive.google.com/drive/folders/11uRnjH9ydIQM1vstrrtQhN7kghg9IKuD", "Cán bộ Thiết bị", "1.6, 3.5"],
+  ["71", "4.3.1. Danh mục-Kho TB, đăng ký Mượn-Trả & Báo hỏng", "", "Cán bộ Thiết bị", "3.5"],
+  ["72", "4.3.2. KH mua sắm & kiểm kê thiết bị", "", "Cán bộ Thiết bị", "1.6, 3.5"],
   ["", "4.4. Y tế", "", "", ""],
-  ["73", "4.4.1. KH-VB Y tế, theo dõi SK HS & Nhật ký phòng YT", "https://drive.google.com/drive/folders/1OznMM1wNlZ0zbbrck56OK2c__9fQBJzp", "Y tế học đường", "1.10, 3.4"],
-  ["74", "4.4.2. BHYT & Truyền thông phòng dịch bệnh", "https://drive.google.com/drive/folders/1YtXeLWOqjVyvhSTUFcR7IhySYzPghQLo", "Y tế học đường", "1.10, 4.2"],
+  ["73", "4.4.1. KH-VB Y tế, theo dõi SK HS & Nhật ký phòng YT", "", "Y tế học đường", "1.10, 3.4"],
+  ["74", "4.4.2. BHYT & Truyền thông phòng dịch bệnh", "", "Y tế học đường", "1.10, 4.2"],
   ["", "5. KẾ TOÁN", "", "", ""],
-  ["75", "5.1. Bảng thanh toán lương", "https://drive.google.com/drive/folders/1ruIxwE70Ki9bLnB4H0NPvTLfZpBkwozT", "Kế toán", "1.6, 1.7"],
-  ["76", "5.2. Hợp đồng lao động", "https://drive.google.com/drive/folders/1Kaq23nj07Zww1aErwAQemN-DIZ-bGE_G", "Kế toán", "1.7, 2.2, 2.3"],
-  ["77", "5.3. Biên bản", "https://drive.google.com/drive/folders/18rni_FRvqQDb4x3h6rLRfhfsRXzFNn6s", "Kế toán", "1.6"],
-  ["78", "5.4. Quyết định", "https://drive.google.com/drive/folders/1ewInItmA-YhK8yuW5Vddy41SwgqyH0m7", "Kế toán", "1.6"],
-  ["79", "5.5. Báo cáo tài chính", "https://drive.google.com/drive/folders/12xyMhG0pYIk8l-8LwsXSAeLYc3HqcRRK", "Kế toán", "1.6"],
+  ["75", "5.1. Bảng thanh toán lương", "", "Kế toán", "1.6, 1.7"],
+  ["76", "5.2. Hợp đồng lao động", "", "Kế toán", "1.7, 2.2, 2.3"],
+  ["77", "5.3. Biên bản", "", "Kế toán", "1.6"],
+  ["78", "5.4. Quyết định", "", "Kế toán", "1.6"],
+  ["79", "5.5. Báo cáo tài chính", "", "Kế toán", "1.6"],
   ["", "6. ĐẢNG", "", "", ""],
-  ["80", "6.1. Nghị quyết Chi bộ", "https://drive.google.com/drive/folders/1gU9xSEQtmKEPQufnQb36iGsnZQFfuind", "Bí thư Chi bộ", "1.3"],
-  ["81", "6.2. Quyết định", "https://drive.google.com/drive/folders/18anxDLRyznSCJ9_FHLdcDXHiddEPzoOV", "Bí thư Chi bộ", "1.3"],
-  ["82", "6.3. Biên bản họp Chi ủy, Chi bộ", "https://drive.google.com/drive/folders/1-ukFUU_sw9GEMxnrP79a4ncAvEV6boT-", "Bí thư Chi bộ", "1.3"],
-  ["83", "6.4. Báo cáo", "https://drive.google.com/drive/folders/1Q9r4YPiGXjuIh_dpTzN9xfm8LzLDOa9M", "Bí thư Chi bộ", "1.3"],
-  ["84", "6.5. Xếp loại đảng viên", "https://drive.google.com/drive/folders/1aOJbC66dPI9f9b3kBwrr1bGXOnlk_6pJ", "Bí thư Chi bộ", "1.3"],
+  ["80", "6.1. Nghị quyết Chi bộ", "", "Bí thư Chi bộ", "1.3"],
+  ["81", "6.2. Quyết định", "", "Bí thư Chi bộ", "1.3"],
+  ["82", "6.3. Biên bản họp Chi ủy, Chi bộ", "", "Bí thư Chi bộ", "1.3"],
+  ["83", "6.4. Báo cáo", "", "Bí thư Chi bộ", "1.3"],
+  ["84", "6.5. Xếp loại đảng viên", "", "Bí thư Chi bộ", "1.3"],
   ["", "7. ĐỘI - SAO NHI ĐỒNG", "", "", ""],
-  ["85", "7.1. KH hoạt động & QĐ tổ chức Đội, Sao nhi đồng", "https://drive.google.com/drive/folders/1vZ8AU5_9VrDI2YkzQM5HAjj1nQ3YR0yw", "Tổng phụ trách Đội", "1.3, 5.4"],
-  ["86", "7.2. Biên bản, báo cáo hoạt động Đội", "https://drive.google.com/drive/folders/1iMx59o_qfk1Qju4QbqbrJs56hih-I3es", "Tổng phụ trách Đội", "1.3, 5.4"],
-  ["87", "7.3. Hình ảnh, tư liệu hoạt động ngoài giờ lên lớp", "https://drive.google.com/drive/folders/1Q6HsubKeNC4U3T3MktyL7llYqFQ1L55d", "Tổng phụ trách Đội", "5.4, 5.5"],
+  ["85", "7.1. KH hoạt động & QĐ tổ chức Đội, Sao nhi đồng", "", "Tổng phụ trách Đội", "1.3, 5.4"],
+  ["86", "7.2. Biên bản, báo cáo hoạt động Đội", "", "Tổng phụ trách Đội", "1.3, 5.4"],
+  ["87", "7.3. Hình ảnh, tư liệu hoạt động ngoài giờ lên lớp", "", "Tổng phụ trách Đội", "5.4, 5.5"],
   ["", "8. BAN ĐẠI DIỆN CHA MẸ HỌC SINH", "", "", ""],
   ["", "8.1. Hồ sơ tổ chức, hội họp", "", "", ""],
-  ["88", "8.1.1. DS Trích ngang; Quy chế hoạt động Ban đại diện", "https://drive.google.com/drive/folders/1NjG6mMpqwHEug-LFtzEeiKj2WarlECkf", "Trưởng Ban ĐDCMHS", "4.1"],
-  ["89", "8.1.2. KH hoạt động và các biên bản của Ban đại diện", "https://drive.google.com/drive/folders/1kWH77xwSAK0xPcZqnik4lcVZJhtYQIQa", "Trưởng Ban ĐDCMHS", "4.1, 4.2"],
+  ["88", "8.1.1. DS Trích ngang; Quy chế hoạt động Ban đại diện", "", "Trưởng Ban ĐDCMHS", "4.1"],
+  ["89", "8.1.2. KH hoạt động và các biên bản của Ban đại diện", "", "Trưởng Ban ĐDCMHS", "4.1, 4.2"],
   ["", "9. HỒ SƠ CÁN BỘ, GIÁO VIÊN, NHÂN VIÊN", "", "", ""],
   ["", "9.1. Hồ sơ Năng lực", "", "", ""],
   ["90", "9.1.1. Hồ sơ Năng lực (công tác TCCB)", "", "Cá nhân CB-GV-NV", "2.1, 2.2, 2.3"],
@@ -1350,11 +1335,11 @@ const DATA_HSS = [
   ["92", "9.1.3. Hồ sơ BDTX theo module hàng năm", "", "Cá nhân CB-GV-NV", "2.2"],
   ["93", "9.1.4. Kế hoạch bài dạy; Sổ dự giờ", "", "Cá nhân CB-GV-NV", "2.2, 5.1"],
   ["", "9.2. Sổ Chủ nhiệm", "", "", ""],
-  ["94", "9.2.1. Sổ Chủ nhiệm (kế hoạch, theo dõi, nhận xét HS)", "https://drive.google.com/drive/folders/1_sJC3VBvwibhuaGA-mIMB5kT81OGD4bE", "GVCN", "2.2, 2.4, 5.1"],
+  ["94", "9.2.1. Sổ Chủ nhiệm (kế hoạch, theo dõi, nhận xét HS)", "", "GVCN", "2.2, 2.4, 5.1"],
   ["", "10. KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC (KĐCL)", "", "", ""],
   ["", "10.1. Hồ sơ Hội đồng tự đánh giá", "", "", ""],
   ["95", "10.1.1. QĐ thành lập Hội đồng tự đánh giá", "", "Hiệu trưởng", "TĐG"],
-  ["96", "10.1.2. Kế hoạch tự đánh giá", "https://drive.google.com/drive/folders/1D9lON7c_0KE6Jl7CSSRiZgtiIj88tskK", "Thư ký HĐ TĐG", "TĐG"],
+  ["96", "10.1.2. Kế hoạch tự đánh giá", "", "Thư ký HĐ TĐG", "TĐG"],
   ["97", "10.1.3. Các biên bản họp Hội đồng TĐG", "", "Thư ký HĐ TĐG", "TĐG"],
   ["", "10.2. Hồ sơ chuyên môn KĐCL", "", "", ""],
   ["98", "10.2.1. Phiếu phân tích tiêu chí & xác định nội hàm", "", "Thư ký HĐ TĐG", "TĐG"],
@@ -1368,7 +1353,7 @@ const DATA_HSS = [
   ["", "11. ĐẢM BẢO CHẤT LƯỢNG", "", "", ""],
   ["", "11.1. Hệ thống văn bản ĐBCL", "", "", ""],
   ["105", "11.1.1. VB chỉ đạo ĐBCL của Sở GDĐT Nghệ An", "", "Phó HT phụ trách CM", "ĐBCL"],
-  ["106", "11.1.2. KH thực hiện ĐBCL của nhà trường", "https://drive.google.com/drive/folders/1GLMOjte1lx04JjtkjHjrJWtcxEmLksoZ", "Phó HT phụ trách CM", "ĐBCL"],
+  ["106", "11.1.2. KH thực hiện ĐBCL của nhà trường", "", "Phó HT phụ trách CM", "ĐBCL"],
   ["", "11.2. Công cụ đánh giá ĐBCL", "", "", ""],
   ["107", "11.2.1. Phụ lục ĐBCL (biểu mẫu theo HD của Sở)", "", "Phó HT phụ trách CM", "ĐBCL"],
   ["108", "11.2.2. Bảng đối sánh Kết quả giáo dục qua các năm", "", "Phó HT phụ trách CM", "ĐBCL"],
@@ -1537,6 +1522,33 @@ function seedHSSDefault109() {
   }};
 }
 
+/**
+ * 🧹 THÁI SƠN ONE-SHOT: Xoá toàn bộ link Drive ở tab "Danh muc HSS" đã được seed
+ * từ template Diễn Liên trong lần đầu setupAll().
+ *
+ * Cách chạy: Apps Script editor → dropdown chọn `resetHssLinksForNewSchool` → ▶ Run
+ * Idempotent (chạy nhiều lần vẫn an toàn). Sau khi chạy, mỗi hồ sơ có link rỗng;
+ * thầy mở Admin web → vào từng hồ sơ → paste link Drive Thái Sơn riêng.
+ *
+ * KHÔNG đụng cột TT/Tên hồ sơ/Phân công/Mã KĐCL.
+ */
+function resetHssLinksForNewSchool() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('Phải mở từ trong Google Sheet (Tiện ích mở rộng → Apps Script).');
+  const sh = ss.getSheetByName(SHEET_HSS);
+  if (!sh) { Logger.log('❌ Không tìm thấy tab "' + SHEET_HSS + '" — chạy setupAll trước.'); return; }
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) { Logger.log('✅ Sheet trống — không cần reset.'); return; }
+  const linkRange = sh.getRange(2, 3, lastRow - 1, 1); // Cột C (Link Drive)
+  const before = linkRange.getValues().filter(function(r){ return String(r[0]).indexOf('drive.google.com') >= 0; }).length;
+  linkRange.clearContent();
+  try { CacheService.getScriptCache().remove('allData'); } catch(e) {}
+  Logger.log('✅ Đã xoá ' + before + ' link Drive (kế thừa từ Diễn Liên) trong tab "' + SHEET_HSS + '"');
+  Logger.log('   Tổng ' + (lastRow - 1) + ' dòng đã clear cột C (giữ nguyên các cột khác).');
+  Logger.log('   Bước tiếp: mở Admin web → Hồ sơ số → paste link Drive Thái Sơn riêng cho từng hồ sơ.');
+  return { ok: true, cleared: before, total: lastRow - 1 };
+}
+
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('Apps Script phải mở từ trong Google Sheet (Tiện ích mở rộng → Apps Script).');
@@ -1586,8 +1598,6 @@ function _populateSheet(ss) {
   s2.setRowHeight(1, 40);
   [50, 200, 110, 170, 110, 130, 220, 280].forEach(function(w, i){ s2.setColumnWidth(i+1, w); });
   s2.setFrozenRows(1);
-  // Cột F (SĐT) định dạng text — bảo vệ số 0 đầu không bị Sheets nuốt
-  s2.getRange(2, 6, Math.max(s2.getMaxRows() - 1, 500), 1).setNumberFormat('@');
   if (DATA_DSGV.length) s2.getRange(2, 1, DATA_DSGV.length, 8).setValues(DATA_DSGV);
 
   // -------- Sheet 3: DS HocSinh --------
@@ -1620,8 +1630,6 @@ function _populateSheet(ss) {
   [50,160,130,200,110,80,90,90,150,40,150,200,220,130,180,120,180,120,
    80,110,180,110,180,200].forEach(function(w, i){ s3.setColumnWidth(i+1, w); });
   s3.setFrozenRows(1);
-  // Cột N (Số điện thoại phụ huynh) định dạng text — bảo vệ số 0 đầu
-  s3.getRange(2, 14, Math.max(s3.getMaxRows() - 1, 1000), 1).setNumberFormat('@');
   if (DATA_HS.length) s3.getRange(2, 1, DATA_HS.length, 18).setValues(DATA_HS);
 
   // -------- Sheet 4: Hinh Anh --------
@@ -1744,6 +1752,8 @@ function _hssDoGet(e) {
       case 'config':   data = getConfig(); break;
       case 'minhchung': data = getMinhChung(); break;
       case 'stats':    data = getStats(); break;
+      case 'dbclTo':   data = getDbclTo(); break;       // ĐBCL Phase 2
+      case 'dbclPhuLuc': data = getDbclPhuLuc(); break; // ĐBCL Phase 2
       default:         data = getAllData();
     }
     payload = { ok: true, data: data };
@@ -1812,26 +1822,6 @@ function _hssDoPost(e) {
       case 'updateConfig':
         result = _writeConfig(body.config || {});
         break;
-      // ── Multi-School: Wizard cấu hình lần đầu (kiến trúc D) ──────────
-      // Đặc biệt: lần đầu chạy khi Sheet CauHinh chưa có auth_token_admin,
-      // hàm này KHÔNG yêu cầu auth (vì admin chưa biết token nào hết).
-      // Lần sau, BẮT BUỘC admin auth.
-      case 'saveSchoolConfig': {
-        result = _saveSchoolConfig_(body);
-        break;
-      }
-      // ── Multi-School: Merge seed DanhMucMinhChung từ template mới ──
-      // Khi BGDĐT ban hành CV mới, thầy update DATA_MINHCHUNG ở Code.gs
-      // master, đồng bộ sang các trường (qua clasp). Admin trường click
-      // "Đồng bộ MC chuẩn" → chạy action này → thêm MC chuẩn mới mà
-      // KHÔNG đụng MC trường đã sửa.
-      case 'mergeMinhChungSeed': {
-        const a = _authCheck_(body, 'admin');
-        if (!a.ok) return ContentService.createTextOutput(JSON.stringify(a))
-          .setMimeType(ContentService.MimeType.JSON);
-        result = _mergeMinhChungSeed_(body);
-        break;
-      }
       case 'studentsAuthed': {
         // Đọc HS có lộ field nhạy cảm — bắt buộc xác thực ít nhất mã GV
         const authRes = _authCheck_(body, 'gv');
@@ -2247,7 +2237,7 @@ function _hssListStudentsAdmin(filter) {
       ns: fmt(r[4]), gt: fmt(r[5]),
       dan_toc: fmt(r[6]), ton_giao: fmt(r[7]),
       tinh: fmt(r[8]), xa: fmt(r[10]), to: fmt(r[11]),
-      noi_sinh: fmt(r[12]), sdt: _normVnPhone_(r[13]),
+      noi_sinh: fmt(r[12]), sdt: fmt(r[13]),
       cha: fmt(r[14]), namsinh_cha: fmt(r[15]),
       me: fmt(r[16]), namsinh_me: fmt(r[17]),
       is_deleted: r[18] === true,
@@ -2290,14 +2280,7 @@ function _writeConfig(config) {
     var key = String(row[0] || '').trim();
     existingKeys[key] = i + 2;
     if (map.hasOwnProperty(key) && map[key] !== '') {
-      var cell = sh.getRange(i + 2, 2);
-      // Điện thoại → ép format text để bảo vệ số 0 đầu
-      if (key === 'Điện thoại') {
-        cell.setNumberFormat('@');
-        cell.setValue(_normVnPhone_(map[key]));
-      } else {
-        cell.setValue(map[key]);
-      }
+      sh.getRange(i + 2, 2).setValue(map[key]);
       updated++;
     }
   });
@@ -2312,212 +2295,7 @@ function _writeConfig(config) {
     sh.getRange(sh.getLastRow() + 1, 1, newRows.length, 2).setValues(newRows);
     updated += newRows.length;
   }
-  // Rename Spreadsheet với icon prefix nếu Tên trường được cập nhật
-  if (config.name) _renameSpreadsheetWithIcon_(ss, config.name);
-  // Invalidate cache để FE đọc ngay cấu hình mới
-  try { CacheService.getScriptCache().remove('allData'); } catch(e){}
   return { updated: updated };
-}
-
-
-// ====================================================================
-// MULTI-SCHOOL (Kiến trúc D) — Wizard cấu hình trường lần đầu
-// ====================================================================
-/**
- * Lưu cấu hình trường khi admin chạy wizard lần đầu.
- *
- * Body schema:
- *   {
- *     action: 'saveSchoolConfig',
- *     // Bắt buộc:
- *     name:           'Trường Tiểu học XYZ',
- *     address:        'Xã ABC, Tỉnh DEF',
- *     xa:             'ABC',
- *     tinh:           'DEF',
- *     schoolCode:     'xyz',           // slug từ schools.json
- *     namHoc:         '2025-2026',
- *     hieuTruong:     'Nguyễn Văn A',
- *     phoHT:          'Trần Thị B',
- *     authTokenGV:    'XYZ-2026',      // mã GV mới
- *     authTokenAdmin: 'AdminXYZ-2026', // mã Admin mới
- *     // Tùy chọn:
- *     phone:          '',
- *     email:          '',
- *     slogan:         '',
- *     themeColor:     '#1e3a8a',
- *     // Auth: lần đầu (sheet chưa có admin token) → KHÔNG cần. Lần sau → cần admin.
- *     token:          'AdminXYZ-2026'  // optional khi first-run
- *   }
- *
- * Returns: { ok:true, firstRun:bool, updated:n }
- */
-function _saveSchoolConfig_(body) {
-  body = body || {};
-
-  // Validate bắt buộc
-  if (!body.name || !body.xa || !body.tinh) {
-    return { ok: false, error: 'Thiếu trường bắt buộc: name, xa, tinh' };
-  }
-  if (!body.authTokenAdmin || body.authTokenAdmin.length < 6) {
-    return { ok: false, error: 'authTokenAdmin phải ≥6 ký tự' };
-  }
-  if (!body.authTokenGV || body.authTokenGV.length < 6) {
-    return { ok: false, error: 'authTokenGV phải ≥6 ký tự' };
-  }
-
-  // First-run detection: Sheet CauHinh chưa có auth_token_admin → cho phép không cần auth
-  var cfg = _getCfgMap_() || {};
-  var existingAdmin = (cfg.auth_token_admin || '').trim();
-  var firstRun = !existingAdmin;
-
-  if (!firstRun) {
-    // Đã cấu hình rồi → bắt buộc admin auth để chỉnh sửa
-    var authRes = _authCheck_(body, 'admin');
-    if (!authRes.ok) {
-      return { ok: false, error: 'Đã có cấu hình trước — chỉ admin được phép sửa: ' + (authRes.error || 'Sai token') };
-    }
-  }
-
-  // Tạo sheet CauHinh nếu chưa có (instance mới, chưa chạy setup)
-  var ss = _getSS();
-  var sh = ss.getSheetByName(SHEET_CFG);
-  if (!sh) {
-    sh = ss.insertSheet(SHEET_CFG);
-    sh.getRange(1, 1, 1, 2).setValues([['Khóa', 'Giá trị']]).setFontWeight('bold');
-  }
-
-  // Ghi danh sách key-value (cả Vietnamese + English keys)
-  var addr = body.address || ('Xã ' + body.xa + ', Tỉnh ' + body.tinh);
-  var driveRoot = body.driveRootName || ('HoSoSo_' + String(body.schoolCode || 'school').replace(/[^a-zA-Z0-9_-]/g, ''));
-  var pairs = {
-    'Tên trường':       body.name,
-    'Địa chỉ':          addr,
-    'Điện thoại':       _normVnPhone_(body.phone || ''),
-    'Email':            body.email || '',
-    'Năm học':          body.namHoc || '2025-2026',
-    'Hiệu trưởng':      body.hieuTruong || '',
-    'Phó Hiệu trưởng':  body.phoHT || '',
-    'Slogan':           body.slogan || '',
-    'Logo emoji':       body.logoEmoji || '🏫',
-    'Màu chủ đạo':      body.themeColor || '',
-    // Multi-School keys (lowercase English)
-    'school_code':      body.schoolCode || '',
-    'xa':               body.xa,
-    'tinh':             body.tinh,
-    'auth_token_gv':    body.authTokenGV,
-    'auth_token_admin': body.authTokenAdmin,
-    'drive_root_name':  driveRoot,
-    // Timestamp + version
-    'wizard_run_at':    new Date().toISOString(),
-    'wizard_version':   'D-1.0'
-  };
-
-  // Update hoặc append từng key
-  var updated = 0, added = 0;
-  var data = sh.getLastRow() >= 2
-    ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues()
-    : [];
-  var rowIndexByKey = {};
-  data.forEach(function (r, i) {
-    if (r[0]) rowIndexByKey[String(r[0]).trim()] = i + 2;
-  });
-
-  Object.keys(pairs).forEach(function (key) {
-    var val = pairs[key];
-    if (rowIndexByKey[key]) {
-      var cell = sh.getRange(rowIndexByKey[key], 2);
-      if (key === 'Điện thoại') cell.setNumberFormat('@');
-      cell.setValue(val);
-      updated++;
-    } else {
-      sh.appendRow([key, val]);
-      if (key === 'Điện thoại') {
-        sh.getRange(sh.getLastRow(), 2).setNumberFormat('@').setValue(val);
-      }
-      added++;
-    }
-  });
-
-  // Rename Spreadsheet với icon prefix "📊 " để dễ phân biệt trong Drive
-  _renameSpreadsheetWithIcon_(ss, body.name);
-
-  // Invalidate cache để reload trang đọc ngay cấu hình mới (tránh wizard hiện lại
-  // khi cache TTL chưa hết).
-  try { CacheService.getScriptCache().remove('allData'); } catch(e){}
-
-  // Bootstrap Drive folder cho instance mới (idempotent)
-  try {
-    if (typeof _bootstrapDriveFolders_ === 'function') {
-      _bootstrapDriveFolders_(body.namHoc || '2025-2026');
-    }
-  } catch (e) {
-    Logger.log('Bootstrap Drive folder lỗi (không fatal): ' + e);
-  }
-
-  return {
-    ok: true,
-    firstRun: firstRun,
-    updated: updated,
-    added: added,
-    school: body.name,
-    code: body.schoolCode
-  };
-}
-
-// ====================================================================
-// MULTI-SCHOOL — Merge MC seed mới từ template (không ghi đè MC trường đã sửa)
-// ====================================================================
-/**
- * So sánh DATA_MINHCHUNG seed (mới, từ code update) với tab MinhChung của
- * trường. Thêm MC chuẩn mà trường chưa có. KHÔNG ghi đè MC đã sửa.
- *
- * Body: { action: 'mergeMinhChungSeed', token: 'AdminXXX' }
- * Returns: { ok:true, added:n, skipped:n, total:n }
- */
-function _mergeMinhChungSeed_(body) {
-  if (typeof DATA_MINHCHUNG === 'undefined' || !DATA_MINHCHUNG.length) {
-    return { ok: false, error: 'DATA_MINHCHUNG seed không tồn tại trong Code.gs' };
-  }
-  var ss = _getSS();
-  var sh = ss.getSheetByName(SHEET_MC);
-  if (!sh) return { ok: false, error: 'Sheet MinhChung không tồn tại' };
-
-  // Đọc MC hiện tại của trường
-  var lastRow = sh.getLastRow();
-  var existing = lastRow >= 2 ? sh.getRange(2, 1, lastRow - 1, 10).getValues() : [];
-
-  // Index theo Mã MC (cột 4, index 3) — assumption: Mã MC duy nhất
-  var existingByMa = {};
-  existing.forEach(function (r) {
-    var ma = String(r[3] || '').trim();
-    if (ma) existingByMa[ma] = true;
-  });
-
-  // Loop seed, thêm những Mã MC chưa có
-  // DATA_MINHCHUNG hàng có 10 cột: [STT, TC, Tiêu chí, Mã, Tên MC, Số/ngày, Nơi BH, Mã HSS, Link, Ghi chú]
-  var toAdd = [];
-  DATA_MINHCHUNG.forEach(function (row) {
-    var ma = String(row[3] || '').trim();
-    if (ma && !existingByMa[ma]) {
-      toAdd.push(row);
-    }
-  });
-
-  if (toAdd.length === 0) {
-    return { ok: true, added: 0, skipped: DATA_MINHCHUNG.length, total: lastRow - 1, note: 'Trường đã có tất cả MC chuẩn — không cần merge' };
-  }
-
-  // Append vào cuối Sheet
-  var startRow = sh.getLastRow() + 1;
-  sh.getRange(startRow, 1, toAdd.length, 10).setValues(toAdd);
-
-  return {
-    ok: true,
-    added: toAdd.length,
-    skipped: DATA_MINHCHUNG.length - toAdd.length,
-    total: sh.getLastRow() - 1,
-    note: 'Đã thêm ' + toAdd.length + ' MC chuẩn mới. MC trường đã sửa được giữ nguyên.'
-  };
 }
 
 
@@ -2537,167 +2315,6 @@ function _getSS() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('Apps Script chưa gắn vào Sheet (phải mở qua Tiện ích mở rộng → Apps Script).');
   return ss;
-}
-
-/**
- * Chuẩn hoá SĐT Việt Nam — phục hồi số 0 đầu nếu bị Sheets nuốt
- * (Sheet hay tự coi "0987..." là number → mất chữ số 0 đầu).
- *  - "+84xxxxxxxxx" / "84xxxxxxxxx" → "0xxxxxxxxx"
- *  - 9 chữ số (mobile thiếu 0) → "0" + nó
- *  - 10 chữ số bắt đầu khác 0 (landline thiếu 0, vd "2386...") → "0" + nó
- *  - Đã đúng (bắt đầu bằng 0) hoặc chuỗi không phải SĐT thuần → giữ nguyên.
- */
-function _normVnPhone_(val) {
-  if (val == null || val === '') return '';
-  var s = String(val).trim();
-  if (!s) return '';
-  // Bỏ space/-/./()
-  var d = s.replace(/[\s\-.()]/g, '');
-  // +84 / 84 prefix → 0
-  if (/^\+?84\d{9,10}$/.test(d)) {
-    return '0' + d.replace(/^\+?84/, '');
-  }
-  // Chỉ xử lý chuỗi gồm toàn chữ số (không động vào "0912 abc def" hay chuỗi pha tạp)
-  if (/^\d+$/.test(d)) {
-    if (d.charAt(0) === '0') return d;             // đã đúng
-    if (d.length === 9 || d.length === 10) return '0' + d; // thiếu 0 đầu
-  }
-  return s;  // không nhận dạng được → trả nguyên (giữ trải nghiệm cũ)
-}
-
-/**
- * HOTFIX 2026-05-12 — Chạy 1 lần ở Apps Script editor.
- * Áp dụng các sửa đổi retroactive cho trường đã setup từ trước:
- *   1. Format cột SĐT (DSGV/F, DS HocSinh/N, CauHinh) thành text `@`
- *   2. Phục hồi số 0 đầu SĐT đã bị Sheets nuốt (đọc → chuẩn hoá → ghi lại)
- *   3. Rename Spreadsheet thành "📊 + Tên trường"
- *   4. Xoá cache để FE đọc data mới ngay
- * Idempotent — chạy nhiều lần không hỏng dữ liệu.
- *
- * Cách chạy:
- *   Apps Script editor → chọn hàm "applyHotfix_2026_05_12" → Run
- *   → Xem log (View → Logs) để kiểm tra kết quả
- */
-function applyHotfix_2026_05_12() {
-  var ss = _getSS();
-  var report = { dsgv: 0, hocsinh: 0, cauhinh: 0, renamed: false };
-
-  // ── (1) DSGV: cột F (SĐT) ─────────────────────────────────────
-  var s2 = ss.getSheetByName(SHEET_DSGV);
-  if (s2) {
-    s2.getRange(2, 6, Math.max(s2.getMaxRows() - 1, 500), 1).setNumberFormat('@');
-    var n2 = s2.getLastRow() - 1;
-    if (n2 > 0) {
-      var rng2 = s2.getRange(2, 6, n2, 1);
-      var vals2 = rng2.getValues();
-      var changed2 = false;
-      for (var i = 0; i < vals2.length; i++) {
-        var fixed = _normVnPhone_(vals2[i][0]);
-        if (String(vals2[i][0]) !== fixed) {
-          vals2[i][0] = fixed;
-          changed2 = true;
-          report.dsgv++;
-        }
-      }
-      if (changed2) rng2.setValues(vals2);
-    }
-    Logger.log('✅ DSGV cột F: format text @, phục hồi ' + report.dsgv + ' SĐT');
-  } else {
-    Logger.log('⚠ Không tìm thấy tab DSGV');
-  }
-
-  // ── (2) DS HocSinh: cột N (SĐT phụ huynh) ─────────────────────
-  var s3 = ss.getSheetByName(SHEET_HS);
-  if (s3) {
-    s3.getRange(2, 14, Math.max(s3.getMaxRows() - 1, 1000), 1).setNumberFormat('@');
-    var n3 = s3.getLastRow() - 1;
-    if (n3 > 0) {
-      var rng3 = s3.getRange(2, 14, n3, 1);
-      var vals3 = rng3.getValues();
-      var changed3 = false;
-      for (var j = 0; j < vals3.length; j++) {
-        var fix3 = _normVnPhone_(vals3[j][0]);
-        if (String(vals3[j][0]) !== fix3) {
-          vals3[j][0] = fix3;
-          changed3 = true;
-          report.hocsinh++;
-        }
-      }
-      if (changed3) rng3.setValues(vals3);
-    }
-    Logger.log('✅ DS HocSinh cột N: format text @, phục hồi ' + report.hocsinh + ' SĐT');
-  } else {
-    Logger.log('⚠ Không tìm thấy tab DS HocSinh');
-  }
-
-  // ── (3) CauHinh: ô "Điện thoại" ───────────────────────────────
-  var s5 = ss.getSheetByName(SHEET_CFG);
-  var schoolName = '';
-  if (s5 && s5.getLastRow() >= 2) {
-    var cfgData = s5.getRange(2, 1, s5.getLastRow() - 1, 2).getValues();
-    for (var k = 0; k < cfgData.length; k++) {
-      var key = String(cfgData[k][0] || '').trim();
-      if (key === 'Tên trường') schoolName = String(cfgData[k][1] || '').trim();
-      if (key === 'Điện thoại') {
-        var cell = s5.getRange(k + 2, 2);
-        cell.setNumberFormat('@');
-        var oldVal = String(cfgData[k][1] || '').trim();
-        var newVal = _normVnPhone_(oldVal);
-        if (oldVal !== newVal) {
-          cell.setValue(newVal);
-          report.cauhinh = 1;
-        }
-      }
-    }
-    Logger.log('✅ CauHinh ô "Điện thoại": format text @' +
-               (report.cauhinh ? ', phục hồi số 0' : ', không cần phục hồi'));
-  }
-
-  // ── (4) Rename Spreadsheet "📊 + Tên trường" ──────────────────
-  if (schoolName) {
-    var oldName = ss.getName();
-    _renameSpreadsheetWithIcon_(ss, schoolName);
-    if (ss.getName() !== oldName) {
-      report.renamed = true;
-      Logger.log('✅ Đã đổi tên Spreadsheet: "' + oldName + '" → "' + ss.getName() + '"');
-    } else {
-      Logger.log('ℹ Spreadsheet đã đúng tên: "' + oldName + '"');
-    }
-  } else {
-    Logger.log('⚠ CauHinh chưa có "Tên trường" → bỏ qua rename');
-  }
-
-  // ── (5) Clear cache ───────────────────────────────────────────
-  try {
-    CacheService.getScriptCache().remove('allData');
-    Logger.log('✅ Đã xoá cache allData');
-  } catch (e) {
-    Logger.log('⚠ Lỗi xoá cache: ' + e);
-  }
-
-  _logDivider();
-  Logger.log('🎉 HOTFIX HOÀN TẤT');
-  Logger.log('   DSGV phục hồi SĐT:     ' + report.dsgv);
-  Logger.log('   DS HocSinh phục hồi:   ' + report.hocsinh);
-  Logger.log('   CauHinh phục hồi:      ' + (report.cauhinh ? '1' : '0'));
-  Logger.log('   Spreadsheet renamed:   ' + (report.renamed ? 'Có' : 'Không (đã đúng tên)'));
-  _logDivider();
-  return report;
-}
-
-/**
- * Đổi tên Spreadsheet với icon prefix "📊 " để dễ phân biệt
- * với các Sheet khác trong Drive (idempotent — chạy nhiều lần ok).
- */
-function _renameSpreadsheetWithIcon_(ss, schoolName) {
-  if (!ss || !schoolName) return;
-  try {
-    var ICON = '📊';
-    var wanted = ICON + ' ' + String(schoolName).trim();
-    if (ss.getName() !== wanted) ss.rename(wanted);
-  } catch (e) {
-    Logger.log('Rename Spreadsheet lỗi (không fatal): ' + e);
-  }
 }
 
 // =====================================================================================
@@ -2751,7 +2368,7 @@ function getTeachers() {
     return {
       tt: r[0], name: String(r[1]).trim(), dob: dob,
       role: String(r[3] || '').trim(), degree: String(r[4] || '').trim(),
-      phone: _normVnPhone_(r[5]), email: String(r[6] || '').trim(),
+      phone: String(r[5] || '').trim(), email: String(r[6] || '').trim(),
       link: String(r[7] || '').trim()
     };
   });
@@ -2828,7 +2445,7 @@ function getStudents(opts) {
       if (fullAccess) {
         out.hamlet     = String(r[11] || '').trim();
         out.birthplace = String(r[12] || '').trim();
-        out.phone      = _normVnPhone_(r[13]);
+        out.phone      = String(r[13] || '').trim();
         out.father     = String(r[14] || '').trim();
         out.fatherYear = String(r[15] || '').trim();
         out.mother     = String(r[16] || '').trim();
@@ -3041,7 +2658,7 @@ function getConfig() {
   return {
     name:           map['Tên trường']      || SCHOOL_CONFIG.name,
     address:        map['Địa chỉ']         || SCHOOL_CONFIG.address,
-    phone:          _normVnPhone_(map['Điện thoại']) || SCHOOL_CONFIG.phone,
+    phone:          map['Điện thoại']      || SCHOOL_CONFIG.phone,
     email:          map['Email']           || SCHOOL_CONFIG.email,
     schoolYear:     map['Năm học']         || SCHOOL_CONFIG.schoolYear,
     principal:      map['Hiệu trưởng']     || SCHOOL_CONFIG.principal     || '',
@@ -3556,6 +3173,9 @@ function getAllData() {
   var images   = getImages();
   var config   = getConfig();
   var minhchung = getMinhChung();
+  // ⭐ ĐBCL Phase 2 (2026-05-12): đọc 2 sheet mới (rỗng nếu chưa tạo)
+  var dbclTo     = (typeof getDbclTo === 'function') ? getDbclTo() : [];
+  var dbclPhuLuc = (typeof getDbclPhuLuc === 'function') ? getDbclPhuLuc() : [];
 
   var classes = _buildClasses(students);
 
@@ -3575,6 +3195,8 @@ function getAllData() {
     teachers: teachers,
     classes: classes,
     images: images,
+    // ⭐ ĐBCL Phase 2 (2026-05-12): bundle Tổ ĐBCL + 16 phụ lục
+    dbcl: { to: dbclTo, phuluc: dbclPhuLuc },
     stats: {
       totalRecords: total, filledRecords: filled,
       totalTeachers: teachers.length, totalChildren: students.length,
@@ -3606,6 +3228,170 @@ function debug_test() {
   } catch (e) { Logger.log('❌ Lỗi: ' + e.message); }
 }
 
+
+// ============================================================================
+// ĐBCL — Đảm bảo Chất lượng (Refactor 2026-05-12 · Phase 2)
+// Dùng 2 sheet: DBCL_To (11 thành viên Tổ ĐBCL) + DBCL_PhuLuc (16 phụ lục + URL Drive)
+// ============================================================================
+const SHEET_DBCL_TO     = 'DBCL_To';
+const SHEET_DBCL_PHULUC = 'DBCL_PhuLuc';
+
+// Đọc Tổ ĐBCL từ Sheet "DBCL_To"
+// Cột (header dòng 1): STT | Họ và tên | Chức vụ | Vai trò
+// Vai trò gợi ý: Tổ trưởng | Tổ phó | Thư ký | Thành viên
+function getDbclTo() {
+  try {
+    var sh = _getSS().getSheetByName(SHEET_DBCL_TO);
+    if (!sh) return [];
+    var rows = sh.getDataRange().getValues();
+    if (rows.length < 2) return [];
+    var hdr = rows[0].map(function(h){ return String(h || '').trim(); });
+    var iSTT = hdr.indexOf('STT');
+    var iName = hdr.indexOf('Họ và tên');
+    var iChuc = hdr.indexOf('Chức vụ');
+    var iVai = hdr.indexOf('Vai trò');
+    if (iName < 0) return [];
+    var out = [];
+    for (var r = 1; r < rows.length; r++) {
+      var name = String(rows[r][iName] || '').trim();
+      if (!name) continue;
+      out.push({
+        stt: iSTT >= 0 ? Number(rows[r][iSTT] || (out.length + 1)) : (out.length + 1),
+        name: name,
+        chucVu: iChuc >= 0 ? String(rows[r][iChuc] || '').trim() : '',
+        vaiTro: iVai >= 0 ? String(rows[r][iVai] || 'Thành viên').trim() : 'Thành viên'
+      });
+    }
+    return out;
+  } catch (e) {
+    Logger.log('[getDbclTo] ' + e.message);
+    return [];
+  }
+}
+
+// Đọc danh sách Phụ lục ĐBCL từ Sheet "DBCL_PhuLuc"
+// Cột (header dòng 1): Số PL | Tên | Loại | Link Drive
+// Loại hợp lệ: data, standard, plan, survey, decision, cover, budget, commit
+function getDbclPhuLuc() {
+  try {
+    var sh = _getSS().getSheetByName(SHEET_DBCL_PHULUC);
+    if (!sh) return [];
+    var rows = sh.getDataRange().getValues();
+    if (rows.length < 2) return [];
+    var hdr = rows[0].map(function(h){ return String(h || '').trim(); });
+    var iNum = hdr.indexOf('Số PL');
+    var iName = hdr.indexOf('Tên');
+    var iType = hdr.indexOf('Loại');
+    var iLink = hdr.indexOf('Link Drive');
+    if (iNum < 0 || iName < 0) return [];
+    var out = [];
+    for (var r = 1; r < rows.length; r++) {
+      var num = Number(rows[r][iNum]);
+      if (!num) continue;
+      out.push({
+        num: num,
+        name: String(rows[r][iName] || '').trim(),
+        type: iType >= 0 ? String(rows[r][iType] || 'data').trim() : 'data',
+        link: iLink >= 0 ? String(rows[r][iLink] || '').trim() : ''
+      });
+    }
+    return out;
+  } catch (e) {
+    Logger.log('[getDbclPhuLuc] ' + e.message);
+    return [];
+  }
+}
+
+// ============================================================================
+// setupDbcl() — Tạo sẵn 2 tab DBCL_To + DBCL_PhuLuc và đổ data mặc định.
+// Idempotent: nếu tab đã tồn tại + có data thì SKIP (không ghi đè).
+// Chạy 1 lần từ Apps Script editor: dropdown chọn setupDbcl → ▶ Run.
+// KHÔNG cần redeploy vì hàm chạy từ editor, không qua doGet.
+// ============================================================================
+function setupDbcl() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log('════════════════════════════════════════════');
+  Logger.log('🚀 SETUP DBCL — Phase 2 (Tổ + Phụ lục)');
+  Logger.log('════════════════════════════════════════════');
+
+  // ── Tab 1: DBCL_To (11 thành viên) ──
+  const TO_HEADER = ['STT', 'Họ và tên', 'Chức vụ', 'Vai trò'];
+  const TO_ROWS = [
+    [1,  'Nguyễn Thị Hòa',         'Hiệu trưởng',         'Tổ trưởng'],
+    [2,  'Trần Thanh Chung',       'Phó Hiệu trưởng',     'Tổ phó'],
+    [3,  'Tăng Thị Tú',            'Thư ký Hội đồng',     'Thư ký'],
+    [4,  'Tăng Thị Hương Giang',   'Tổ trưởng CM 1,2,3',  'Thành viên'],
+    [5,  'Cao Thị Hòe',            'Tổ phó CM 1,2,3',     'Thành viên'],
+    [6,  'Nguyễn Thị Hòa',         'Tổ trưởng CM 4,5',    'Thành viên'],
+    [7,  'Cao Thị Thanh Hương',    'Tổ phó CM 4,5',       'Thành viên'],
+    [8,  'Nguyễn Thị Kim Oanh',    'GV TPT Đội',          'Thành viên'],
+    [9,  'Nguyễn Thị Luyến',       'GV Tiếng Anh',        'Thành viên'],
+    [10, 'Nguyễn Thị Hà',          'NV TVTB',             'Thành viên'],
+    [11, 'Phan Thị Hạnh',          'NV Kế toán',          'Thành viên']
+  ];
+
+  var shTo = ss.getSheetByName(SHEET_DBCL_TO);
+  if (!shTo) {
+    shTo = ss.insertSheet(SHEET_DBCL_TO);
+    Logger.log('  ✅ Tạo tab "' + SHEET_DBCL_TO + '"');
+  } else {
+    Logger.log('  💾 Tab "' + SHEET_DBCL_TO + '" đã tồn tại (' + shTo.getLastRow() + ' dòng)');
+  }
+  if (shTo.getLastRow() < 2) {
+    shTo.getRange(1, 1, 1, TO_HEADER.length).setValues([TO_HEADER]).setFontWeight('bold').setBackground('#e3f2fd');
+    shTo.getRange(2, 1, TO_ROWS.length, TO_HEADER.length).setValues(TO_ROWS);
+    shTo.setFrozenRows(1);
+    shTo.autoResizeColumns(1, TO_HEADER.length);
+    Logger.log('  ✅ Đổ ' + TO_ROWS.length + ' thành viên Tổ ĐBCL');
+  } else {
+    Logger.log('  ⚠ Tab "' + SHEET_DBCL_TO + '" đã có data — SKIP (không ghi đè)');
+  }
+
+  // ── Tab 2: DBCL_PhuLuc (16 phụ lục, Link Drive trống) ──
+  const PL_HEADER = ['Số PL', 'Tên', 'Loại', 'Link Drive'];
+  const PL_ROWS = [
+    [1,  'Thực trạng nhà trường 2025-2026',                    'data',     ''],
+    [2,  'Chuẩn đầu ra chất lượng học tập 2025-2026',          'standard', ''],
+    [3,  'Nâng cao chất lượng CBQL, GV, NV (37 người)',         'data',     ''],
+    [4,  'Nâng cao cơ sở vật chất, trang thiết bị (83,5 triệu)','plan',     ''],
+    [5,  'Kết quả học tập, rèn luyện 2024-2025',               'data',     ''],
+    [6,  'Phiếu khảo sát Phụ huynh đối với GV',                 'survey',   ''],
+    [7,  'Phiếu khảo sát GV về chất lượng HS',                  'survey',   ''],
+    [8,  'Bộ tiêu chí đánh giá Chương trình GD (5 mục)',        'survey',   ''],
+    [9,  'Phiếu đánh giá CBQL trường PT — HK1',                 'survey',   ''],
+    [10, 'QĐ thành lập Tổ ĐBCL (96/QĐ-THTS · 20/9/2025)',       'decision', ''],
+    [11, 'Phân công nhiệm vụ Tổ ĐBCL (9 nhóm)',                 'plan',     ''],
+    [12, 'Bìa + Danh sách & Chữ ký Tổ ĐBCL',                    'cover',    ''],
+    [13, 'Kế hoạch Đảm bảo Chất lượng 2025-2026',               'plan',     ''],
+    [14, 'Dự toán kinh phí ĐBCL (9,7 triệu)',                   'budget',   ''],
+    [15, 'Bản cam kết GV chủ nhiệm + GV chuyên (2 mẫu)',        'commit',   ''],
+    [16, 'Bản cam kết HT với UBND xã Đô Lương',               'commit',   '']
+  ];
+
+  var shPl = ss.getSheetByName(SHEET_DBCL_PHULUC);
+  if (!shPl) {
+    shPl = ss.insertSheet(SHEET_DBCL_PHULUC);
+    Logger.log('  ✅ Tạo tab "' + SHEET_DBCL_PHULUC + '"');
+  } else {
+    Logger.log('  💾 Tab "' + SHEET_DBCL_PHULUC + '" đã tồn tại (' + shPl.getLastRow() + ' dòng)');
+  }
+  if (shPl.getLastRow() < 2) {
+    shPl.getRange(1, 1, 1, PL_HEADER.length).setValues([PL_HEADER]).setFontWeight('bold').setBackground('#fff3e0');
+    shPl.getRange(2, 1, PL_ROWS.length, PL_HEADER.length).setValues(PL_ROWS);
+    shPl.setFrozenRows(1);
+    shPl.autoResizeColumns(1, PL_HEADER.length);
+    Logger.log('  ✅ Đổ ' + PL_ROWS.length + ' phụ lục (Link Drive trống — dán tay sau)');
+  } else {
+    Logger.log('  ⚠ Tab "' + SHEET_DBCL_PHULUC + '" đã có data — SKIP (không ghi đè)');
+  }
+
+  // ── Xóa cache để getAllData đọc lại ngay ──
+  try { CacheService.getScriptCache().remove('allData'); } catch(e) {}
+
+  Logger.log('');
+  Logger.log('🎉 HOÀN TẤT. Mở dbcl.html, hard refresh (Ctrl+F5),');
+  Logger.log('   F12 Console gõ: window.DBCL_FROM_BACKEND → phải = true');
+}
 
 // ============================================================================
 // SECTION 3/3: TDG.gs — backend KĐCL-TĐG (lưu báo cáo Drive + AI Gemini/Claude)
@@ -4253,24 +4039,13 @@ function _ensureColumnsAtEnd_(sheetName, newHeaders) {
 // File ảnh lưu trong Drive PRIVATE (chỉ owner của Apps Script đọc được).
 // FE truy cập qua API getSignatureImage(fileId) trả base64 — không share public.
 // ============================================================================
-// Multi-School: tên folder Drive đọc động từ Sheet CauHinh key 'drive_root_name'.
-// Nếu chưa set (trước khi wizard chạy) thì dùng fallback theo school_code, hoặc 'HoSoSo'.
-function _getDriveRootName_() {
-  var c = _getCfgMap_() || {};
-  if (c.drive_root_name) return String(c.drive_root_name);
-  if (c.school_code) return 'HoSoSo_' + String(c.school_code).replace(/[^a-zA-Z0-9_-]/g, '');
-  return 'HoSoSo';  // fallback chung — khuyến nghị set qua wizard
-}
-// Lưu ý: KHÔNG dùng `var _DRIVE_ROOT_NAME; Object.defineProperty(this, ...)` — Apps Script V8
-// runtime tạo property non-configurable từ `var` ở global nên defineProperty ném TypeError.
-// Mọi nơi cần giá trị → gọi trực tiếp _getDriveRootName_().
+const _DRIVE_ROOT_NAME = 'HoSoSo_THThaiSon';
 
 /**
  * Bootstrap cấu trúc folder Drive theo namHoc, ID lưu vào Config.
  * Idempotent — tìm folder theo tên, không tồn tại mới tạo.
- *   {DRIVE_ROOT}/{namHoc}/ChuKy/ChuKy_GVCN/
- *   {DRIVE_ROOT}/{namHoc}/HocBa/
- *   (DRIVE_ROOT đọc từ Sheet CauHinh key 'drive_root_name', vd: HoSoSo_THThaiSon)
+ *   HoSoSo_THThaiSon/{namHoc}/ChuKy/ChuKy_GVCN/
+ *   HoSoSo_THThaiSon/{namHoc}/HocBa/
  */
 // 2026-05-10: Ưu tiên ID folder đã set (Script Properties hoặc sheet CauHinh)
 // để thầy có thể chỉ định folder Drive đích thay vì backend tự tạo.
@@ -4303,7 +4078,7 @@ function _ensureDriveFolders_(namHoc) {
     return created;
   }
 
-  const root       = _resolveOrCreate('DRIVE_ROOT_FOLDER_ID', function(){ return DriveApp.getRootFolder(); }, _getDriveRootName_());
+  const root       = _resolveOrCreate('DRIVE_ROOT_FOLDER_ID', function(){ return DriveApp.getRootFolder(); }, _DRIVE_ROOT_NAME);
   const yearFolder = _findOrCreateFolder_(root, namHoc);
   const chuKy      = _resolveOrCreate('SIGNATURE_FOLDER_ID',  function(){ return yearFolder; }, 'ChuKy');
   const chuKyGVCN  = _findOrCreateFolder_(chuKy, 'ChuKy_GVCN');
@@ -4485,7 +4260,7 @@ function _deleteSignature_(body, auth) {
 /**
  * Trả danh sách chữ ký: HT, dấu, và mỗi GV có lop_phu_trach.
  * 2026-05-09 v3: Đọc THẲNG sheet Users — Users là source of truth GVCN,
- *   không phụ thuộc DSGV (DSGV có thể trống ở mỗi instance trường).
+ *   không phụ thuộc DSGV (DSGV thực tế trống ở instance THThaiSon).
  *   Field `maGV` trong response thực chất là `username` của Users.
  */
 function _getSignatures_() {
@@ -4613,7 +4388,7 @@ function _getSignatureImage_(body) {
 // 2026-05-09 — Phase 1E: Xuất học bạ cá nhân (Word + PDF) lên Drive
 // FE render Word qua docxtemplater (đã có ảnh chữ ký) → POST blob base64 →
 // server lưu DOCX + convert PDF + ghi HSS_Status. Cấu trúc folder:
-//   {DRIVE_ROOT}/{namhoc}/HocBa/{lop}/{ma_hs}_{ho_ten}/{*.docx, *.pdf}
+//   HoSoSo_THThaiSon/{namhoc}/HocBa/{lop}/{ma_hs}_{ho_ten}/{*.docx, *.pdf}
 // ============================================================================
 
 /**
@@ -4821,7 +4596,7 @@ function _qlclAudit(user, role, action, target, oldVal, newVal, note) {
 // SECTION QLCL TEMPLATE (Wide Format) — adopted từ project QLCL_V3.0
 // (May 2026) — backend chạy trên Sheet HSS (cùng Sheet với HSS+KĐCL).
 // Data 9 tab Q_* (Config, Lop, CN, GK2, CK1, GK1, NhanXet, Users, HocSinh)
-// được migrate từ Sheet QLCL nguồn (nếu có) qua hàm migrateQlclFromExternal.
+// được migrate từ Sheet THThaiSon_05.2026 qua hàm migrateQlclFromExternal.
 // ============================================================================
 
 // Constants — namespace QLCL Template
@@ -5567,12 +5342,12 @@ function _qtCreateSheetDanhGia(period, lop) {
 }
 
 // ============================================================================
-// MIGRATION — Copy 9 tab QLCL từ Sheet ngoài (nếu có Sheet cũ) sang Sheet
+// MIGRATION — Copy 9 tab QLCL từ Sheet ngoài (THThaiSon_05.2026) sang Sheet
 // HSS hiện tại. Chạy 1 lần khi gộp 2 Sheet thành 1.
 // ============================================================================
 /**
  * Cách chạy: Apps Script editor → chọn migrateQlclFromExternal → ▶ Run.
- * Hệ thống sẽ prompt nhập Sheet ID nguồn (lấy từ URL Sheet QLCL cũ).
+ * Hệ thống sẽ prompt nhập Sheet ID nguồn (lấy từ URL Sheet THThaiSon_05.2026).
  *
  * Sheet ID lấy từ URL: https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit
  *
@@ -5585,7 +5360,7 @@ function migrateQlclFromExternal() {
   try {
     const r = ui.prompt(
       'Migrate QLCL từ Sheet ngoài',
-      'Paste Sheet ID của Sheet QLCL nguồn:\n\nLấy từ URL: docs.google.com/spreadsheets/d/<ID>/edit',
+      'Paste Sheet ID của Sheet QLCL nguồn (THThaiSon_05.2026):\n\nLấy từ URL: docs.google.com/spreadsheets/d/<ID>/edit',
       ui.ButtonSet.OK_CANCEL
     );
     if (r.getSelectedButton() !== ui.Button.OK) {
@@ -5688,9 +5463,14 @@ function getKetQuaMOET(khoi, ky, lop) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ─── 1. Lấy danh sách học sinh ─────────────────────────────────────
-  const sheetHS = ss.getSheetByName('HocSinh') || ss.getSheetByName('DSHS');
+  // 2026-05-13 fix: thêm "DS HocSinh" (tên tab HSS thật, có space) vì migration
+  //   đã bỏ tab "HocSinh" rời (xem dòng 5398). QLCL Template wide format
+  //   trỏ trực tiếp vào tab "DS HocSinh" của HSS.
+  const sheetHS = ss.getSheetByName('DS HocSinh')
+               || ss.getSheetByName('HocSinh')
+               || ss.getSheetByName('DSHS');
   if (!sheetHS) {
-    return { success: false, message: 'Không tìm thấy sheet HocSinh / DSHS' };
+    return { success: false, message: 'Không tìm thấy sheet "DS HocSinh" / HocSinh / DSHS' };
   }
 
   const hsData = sheetHS.getDataRange().getValues();

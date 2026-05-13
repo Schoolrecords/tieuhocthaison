@@ -24,263 +24,11 @@
   //    trường cần sửa khi triển khai). Biến này là global classic-script binding
   //    → app.js (cũng classic script) tham chiếu trực tiếp được.
 
-  // ⭐ AUTH 2 CẤP — Mã GV (sửa điểm) + Mã Admin (Admin panel + KĐCL).
-  // Trang KHÔNG hỏi mã ngay từ đầu. Khách/phụ huynh/đoàn KT xem tự do.
-  // Modal chỉ hiện khi cán bộ click vào "phòng khoá" (sửa điểm / Admin / KĐCL).
-  // Mã được lưu trên localStorage máy/điện thoại — lần sau khỏi nhập lại.
-  //
-  // Phân loại action theo cấp:
-  //   • _GV_WRITE_ACTIONS   — sửa điểm/nhận xét/NLPC/xếp loại/vi phạm/hoạt động
-  //   • _ADMIN_WRITE_ACTIONS — phân công, import HS/GV, cấu hình, KĐCL/TĐG
-  //   (action không thuộc 2 list trên = read-only, không cần mã)
-  var _GV_WRITE_ACTIONS = [
-    'qlclSaveDiem','qlclSaveNhanXet','qlclSaveNLPC','qlclSaveXepLoai','qlclSaveDiemDanh',
-    'qlclSaveViPham','qlclDeleteViPham','qlclSaveHoatDong','qlclDeleteHoatDong',
-    // ⭐ studentsAuthed là action ĐỌC nhưng cần xác thực (đọc field nhạy cảm SĐT/cha/mẹ).
-    // Đưa vào đây để FE auth-gate hỏi mã GV trước khi gọi (Nghị định 13/2023).
-    'studentsAuthed'
-  ];
-  var _ADMIN_WRITE_ACTIONS = [
-    'updateHSS','updateMinhChung','resetMinhChungSeed',
-    'importTeachers','importStudents','updateConfig',
-    'qlclSavePhanCong','saveHssStatus',
-    'saveReport','deleteReport'
-  ];
-  function _authLevelForAction(action){
-    if (_ADMIN_WRITE_ACTIONS.indexOf(action) >= 0) return 'admin';
-    if (_GV_WRITE_ACTIONS.indexOf(action) >= 0)    return 'gv';
-    return null; // read-only / không cần auth
-  }
-
-  // ─────────────────────────────────────────────────────────────────────
-  // ⭐ AUTH 2026-05-07: SSO 1 lần qua tab Users (cùng key `_cu` với QLCL)
-  //   • CU = {sessionToken, username, hoten, role, lop, phan_cong}
-  //   • Backwards-compat: AUTH_TOKEN cũ vẫn dùng được trong 1 tuần
-  //   • _hasLevel ưu tiên CU; chỉ fallback AUTH_TOKEN nếu chưa login SSO
-  // ─────────────────────────────────────────────────────────────────────
-  function getCU(){
-    try { var s = localStorage.getItem('_cu'); return s ? JSON.parse(s) : null; }
-    catch(e){ return null; }
-  }
-  function setCU(obj){
-    try {
-      if (obj) localStorage.setItem('_cu', JSON.stringify(obj));
-      else localStorage.removeItem('_cu');
-    } catch(e){ console.error('Lỗi lưu CU:', e); }
-  }
-  // Map role tự do (admin/Hiệu trưởng/GVCN/teacher/GV …) → 'admin' | 'gv' | ''
-  function _cuLevel(cu){
-    if (!cu || !cu.sessionToken) return '';
-    var raw = String(cu.role || '');
-    var lower = raw.toLowerCase();
-    if (lower === 'admin' || raw === 'Hiệu trưởng' || lower === 'hieu truong') return 'admin';
-    if (lower === 'gvcn' || lower === 'teacher' || lower === 'gv' || lower.indexOf('gv ') === 0) return 'gv';
-    return '';
-  }
-
-  // Legacy AUTH_TOKEN — giữ tạm 1 tuần để backwards-compat
-  function getAuthToken(){
-    try { return localStorage.getItem('AUTH_TOKEN') || ''; } catch(e){ return ''; }
-  }
-  function getAuthLevel(){
-    try { return (localStorage.getItem('AUTH_LEVEL')||'').toLowerCase(); } catch(e){ return ''; }
-  }
-  function _saveAuthToken(tok){
-    try {
-      if (tok) localStorage.setItem('AUTH_TOKEN', String(tok));
-      else localStorage.removeItem('AUTH_TOKEN');
-    } catch(e){ console.error('Lỗi lưu mã:', e); }
-  }
-  function _saveAuthLevel(lvl){
-    try {
-      if (lvl) localStorage.setItem('AUTH_LEVEL', String(lvl));
-      else localStorage.removeItem('AUTH_LEVEL');
-    } catch(e){}
-  }
-
-  // Mức hiện có có đủ cho yêu cầu (admin > gv) không?
-  function _hasLevel(needLevel){
-    // Ưu tiên SSO mới
-    var cuLvl = _cuLevel(getCU());
-    if (cuLvl) {
-      return (needLevel === 'gv') ? (cuLvl === 'gv' || cuLvl === 'admin') : (cuLvl === 'admin');
-    }
-    // Fallback AUTH_TOKEN cũ
-    var lvl = getAuthLevel();
-    if (!lvl || !getAuthToken()) return false;
-    return (needLevel === 'gv') ? (lvl === 'gv' || lvl === 'admin') : (lvl === 'admin');
-  }
-  // Tiện ích cho dev (gõ trên Console nếu cần)
-  window.setAuthToken = function(tok, lvl){
-    _saveAuthToken(tok); _saveAuthLevel(lvl||'gv');
-    console.log('[AUTH] Đã lưu (legacy). Level=' + (lvl||'gv') + '. Reload để áp dụng.');
-  };
-  // Đăng xuất: xoá cả CU (SSO mới) và AUTH_TOKEN (legacy) rồi reload
-  window.logoutSchool = function(){
-    if (confirm('Đăng xuất khỏi khu vực cán bộ?')) {
-      setCU(null);
-      _saveAuthToken(''); _saveAuthLevel('');
-      location.reload();
-    }
-  };
-
-  // ====================================================================
-  // 🚪 MODAL ĐĂNG NHẬP 2 CẤP
-  //   requireAuth(needLevel, callback) — đảm bảo có mã đủ quyền rồi gọi callback
-  //   _authForAction(action) → Promise — dùng trong wrapper fetch (callGAS,...)
-  // ====================================================================
-  var _authNeedLevel = 'gv';        // cấp đang yêu cầu cho lần show modal hiện tại
-  var _authOnSuccess = null;        // callback chạy sau khi auth thành công
-  var _authOnCancel  = null;        // callback chạy khi user nhấn Hủy
-
-  function _setAuthGateUI(needLevel){
-    var emoji  = document.getElementById('authEmoji');
-    var title  = document.getElementById('authTitle');
-    var sub    = document.getElementById('authSub');
-    var labelU = document.getElementById('authLabel');
-    var inpU   = document.getElementById('authInput');
-    var labelP = document.getElementById('authLabelPwd');
-    var inpP   = document.getElementById('authPassword');
-    var hint   = document.getElementById('authHint');
-    if (needLevel === 'admin') {
-      if (emoji) emoji.textContent = '🛡️';
-      if (title) title.textContent = 'Đăng nhập Admin';
-      if (sub)   sub.innerHTML = 'Dành cho Hiệu trưởng / Phó hiệu trưởng.';
-    } else {
-      if (emoji) emoji.textContent = '🔑';
-      if (title) title.textContent = 'Đăng nhập giáo viên';
-      if (sub)   sub.innerHTML = 'Để sửa điểm / nhận xét / xếp loại.';
-    }
-    // ⭐ SSO mới: 2 ô tên đăng nhập + mật khẩu (cùng giao diện cho cả GV & Admin)
-    if (labelU) { labelU.textContent = 'Tên đăng nhập'; labelU.style.display = ''; }
-    if (inpU)   { inpU.placeholder = 'Nhập tên đăng nhập'; inpU.type = 'text'; inpU.setAttribute('autocomplete','off'); inpU.setAttribute('autocapitalize','off'); inpU.setAttribute('autocorrect','off'); inpU.setAttribute('spellcheck','false'); }
-    if (labelP) { labelP.textContent = 'Mật khẩu'; labelP.style.display = ''; }
-    if (inpP)   { inpP.style.display = ''; inpP.value = ''; }
-    if (hint)   {
-      hint.innerHTML = '💡 Tài khoản do <b>Admin</b> cấp. Mỗi máy chỉ cần đăng nhập <b>một lần</b>. Quên mật khẩu liên hệ Hiệu trưởng/PHT qua Zalo.';
-      hint.style.display = '';
-    }
-  }
-  function _showAuthGate(needLevel, onSuccess, onCancel){
-    _authNeedLevel = needLevel || 'gv';
-    _authOnSuccess = onSuccess || null;
-    _authOnCancel  = onCancel  || null;
-    _setAuthGateUI(_authNeedLevel);
-    var g = document.getElementById('authGate');
-    if (g) {
-      g.classList.remove('is-hidden');
-      setTimeout(function(){
-        var i = document.getElementById('authInput');
-        if (i) { i.value=''; i.focus(); }
-      }, 50);
-    }
-    var msg = document.getElementById('authMsg');
-    if (msg) { msg.className = 'auth-msg'; msg.textContent = ''; }
-  }
-  function _hideAuthGate(){
-    var g = document.getElementById('authGate');
-    if (g) g.classList.add('is-hidden');
-  }
-  // Cho khách bấm "Hủy" → trở về trang public, không vào phòng khoá nữa
-  window.cancelAuthGate = function(){
-    var cb = _authOnCancel;
-    _authOnSuccess = null; _authOnCancel = null;
-    _hideAuthGate();
-    if (cb) try { cb(); } catch(e){ console.error(e); }
-  };
-  // requireAuth(needLevel, callback[, onCancel]) — mở khoá rồi chạy callback
-  window.requireAuth = function(needLevel, callback, onCancel){
-    needLevel = needLevel || 'gv';
-    if (_hasLevel(needLevel)) { callback && callback(); return; }
-    _showAuthGate(needLevel, callback, onCancel);
-  };
-  // Promise dùng trong wrapper fetch — resolve khi đã có mã đủ quyền cho action
-  window._authForAction = function(action){
-    return new Promise(function(resolve, reject){
-      var lvl = _authLevelForAction(action);
-      if (!lvl) { resolve(); return; }            // read-only
-      if (_hasLevel(lvl)) { resolve(); return; }  // đã có sẵn
-      _showAuthGate(lvl, function(){ resolve(); }, function(){ reject(new Error('AUTH_CANCELED')); });
-    });
-  };
-
-  // ⭐ SSO 2026-05-07: đăng nhập username/password qua tab Users.
-  //    Backend trả {ok, sessionToken, user:{username,hoten,role,lop,phan_cong}}
-  //    FE lưu vào localStorage._cu (cùng key với QLCL → 1 lần login dùng cả 2 module).
-  function submitAuthForm(ev){
-    if (ev && ev.preventDefault) ev.preventDefault();
-    var inpU = document.getElementById('authInput');
-    var inpP = document.getElementById('authPassword');
-    var btn  = document.getElementById('authBtn');
-    var msg  = document.getElementById('authMsg');
-    var u = (inpU.value || '').trim();
-    var p = (inpP && inpP.value) ? inpP.value : '';
-    if (!u || !p) {
-      msg.className = 'auth-msg err';
-      msg.textContent = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
-      return false;
-    }
-    if (typeof API_URL !== 'string' || !API_URL) {
-      msg.className = 'auth-msg err';
-      msg.textContent = 'Chưa cấu hình backend. Liên hệ Hiệu trưởng.';
-      return false;
-    }
-    btn.disabled = true; btn.textContent = '⏳ Đang kiểm tra…';
-    msg.className = 'auth-msg'; msg.textContent = '';
-    fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'login', username: u, password: p }),
-      redirect: 'follow'
-    }).then(function(r){ return r.text(); }).then(function(t){
-      var res = null; try { res = JSON.parse(t); } catch(e){}
-      btn.disabled = false; btn.textContent = 'Vào';
-      if (res && res.ok && res.sessionToken && res.user) {
-        var cu = {
-          sessionToken: res.sessionToken,
-          username: res.user.username,
-          hoten: res.user.hoten || res.user.username,
-          role: res.user.role || 'gv',
-          lop: res.user.lop || '',
-          phan_cong: res.user.phan_cong || ''
-        };
-        var lvl = _cuLevel(cu);
-        // Tài khoản đúng nhưng KHÔNG đủ quyền cho khu vực đang vào
-        if (_authNeedLevel === 'admin' && lvl !== 'admin') {
-          msg.className = 'auth-msg err';
-          msg.textContent = '⛔ Tài khoản này không có quyền Admin. Cần Hiệu trưởng/Phó HT.';
-          try { inpP.value = ''; inpP.focus(); } catch(e){}
-          return;
-        }
-        if (!lvl) {
-          msg.className = 'auth-msg err';
-          msg.textContent = '⛔ Tài khoản không có quyền sử dụng chức năng này.';
-          return;
-        }
-        // Lưu CU + clear AUTH_TOKEN cũ (đã chuyển sang SSO)
-        setCU(cu);
-        _saveAuthToken(''); _saveAuthLevel('');
-        msg.className = 'auth-msg ok';
-        msg.textContent = '✅ Xin chào ' + cu.hoten + '. Đang vào…';
-        var cb = _authOnSuccess;
-        _authOnSuccess = null; _authOnCancel = null;
-        setTimeout(function(){
-          _hideAuthGate();
-          if (cb) try { cb(); } catch(e){ console.error(e); }
-        }, 500);
-      } else {
-        msg.className = 'auth-msg err';
-        msg.textContent = (res && res.error) ? res.error : '❌ Đăng nhập thất bại. Vui lòng thử lại.';
-        try { inpP.value = ''; inpP.focus(); } catch(e){}
-      }
-    }).catch(function(err){
-      btn.disabled = false; btn.textContent = 'Vào';
-      msg.className = 'auth-msg err';
-      msg.textContent = '❌ Mất kết nối backend. Kiểm tra mạng hoặc liên hệ Hiệu trưởng.';
-    });
-    return false;
-  }
-  // ⛔ KHÔNG còn auto-show modal khi vào trang. Trang public mở thẳng cho khách xem.
+  // ⭐ AUTH 2 CẤP — Đã chuyển sang core-shared.js (Refactor 2026-05-12 · Bước 1d).
+  //   Các hàm/biến: _GV_WRITE_ACTIONS, _ADMIN_WRITE_ACTIONS, _authLevelForAction,
+  //   getCU, setCU, _cuLevel, getAuthToken, getAuthLevel, _saveAuthToken, _saveAuthLevel,
+  //   _hasLevel, setAuthToken, logoutSchool, _setAuthGateUI, _showAuthGate, _hideAuthGate,
+  //   cancelAuthGate, requireAuth, _authForAction, submitAuthForm — xem core-shared.js Phần 1.
 
   // ============ STATE ============
   // TEMPLATE MODE: DEFAULT_MC để rỗng. Khi API backend trả về dữ liệu Sheet MinhChung,
@@ -414,28 +162,8 @@
     khoi5: {icon:'🎓', label:'Khối 5'}
   };
 
-  function toggleMenu(){
-    document.getElementById('mobileMenu').classList.toggle('open');
-    document.getElementById('backdrop').classList.toggle('open');
-  }
-
-  function initials(name){
-    const p = String(name||'').trim().split(/\s+/);
-    const first = (p[0] && p[0][0]) || '';
-    const last = (p[p.length-1] && p[p.length-1][0]) || '';
-    return (first + last).toUpperCase();
-  }
-  function escapeHtml(s){
-    return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-  }
-  function countLeaves(nodes){
-    let t=0,f=0;
-    nodes.forEach(n => {
-      if(n.leaf){ t++; if(n.has) f++; }
-      else if(n.children){ const x = countLeaves(n.children); t+=x.t; f+=x.f; }
-    });
-    return {t,f};
-  }
+  // ⭐ UTILS — toggleMenu, initials, escapeHtml, countLeaves đã chuyển sang
+  //   core-shared.js Phần 2 (Refactor 2026-05-12 · Bước 1d).
 
   // ============ RENDER STATS ============
   function renderStats(){
@@ -471,19 +199,31 @@
   }
 
   // ============ RECORDS (Hồ sơ số) ============
+  // ⭐ Refactor 2026-05-12 · Bước 4: Chỉ render 9 nhóm hành chính (stt 1-9).
+  //   Nhóm 10 (Kiểm định CL) → trang kdcl.html. Nhóm 11 (Đảm bảo CL) → trang dbcl.html.
+  //   Admin tab "Hồ sơ số" vẫn quản lý đầy đủ 11 nhóm qua admLoadHSS riêng.
   function renderCategories(){
-    document.getElementById('catGrid').innerHTML = HSS.map((cat, i) => {
+    const visibleCats = (HSS || []).filter((cat, i) => {
+      const stt = (cat && cat.stt != null) ? Number(cat.stt) : (i + 1);
+      return stt < 10;
+    });
+    document.getElementById('catGrid').innerHTML = visibleCats.map((cat, displayIdx) => {
       const c = countLeaves(cat.children || []);
       const groups = (cat.children || []).length;
-      return `<div class="cat-card" onclick="openCat(${i})">
-        <span class="cat-num">NHÓM 0${i+1}</span>
-        <span class="cat-icon">${CAT_ICONS[i] || '📁'}</span>
+      // openCat(origIdx) cần index trong mảng HSS gốc (vì state chi tiết tham chiếu HSS[origIdx])
+      const origIdx = HSS.indexOf(cat);
+      return `<div class="cat-card" onclick="openCat(${origIdx})">
+        <span class="cat-num">NHÓM 0${displayIdx+1}</span>
+        <span class="cat-icon">${CAT_ICONS[origIdx] || '📁'}</span>
         <h3>${escapeHtml(cat.name)}</h3>
         <div class="cat-meta">
           <div class="cat-count"><span><b>${c.t}</b>hồ sơ</span><span><b>${groups}</b>nhóm</span></div>
           <div class="cat-arrow">→</div>
         </div></div>`;
     }).join('');
+    // Cập nhật count badge ở phần intro
+    var elRC = document.getElementById('recCount'); if (elRC) elRC.textContent = visibleCats.reduce((s, c) => s + countLeaves(c.children || []).t, 0);
+    var elRD = document.getElementById('recDualHss'); if (elRD) elRD.textContent = visibleCats.reduce((s, c) => s + countLeaves(c.children || []).t, 0);
   }
 
   function renderLeaves(items){
@@ -1522,7 +1262,11 @@
 
     // -- QLCL: HỌC BẠ --
     {q:'⭐ Học bạ số xuất ra Word có chuẩn TT 27 không, có cần dán vào học bạ giấy?', a:'Có. QLCL xuất file Word đúng <b>mẫu học bạ TT 27/2020</b> (riêng Lớp 1, 2, 3, 4, 5) — đã chèn sẵn ảnh chữ ký GVCN, Hiệu trưởng, dấu trường ở đúng vị trí. <b>In ra dán vào học bạ giấy</b> hoặc lưu hồ sơ điện tử. Vào QLCL → "📋 Quản lý học bạ" → chọn lớp → "Xuất Word" (1 HS) hoặc "Xuất cả lớp" (file ZIP).'},
-    {q:'Ai cấu hình ảnh chữ ký, dấu trường?', a:'Admin (HT/PHT) vào QLCL → Sidebar <b>"✍️ Ảnh chữ ký &amp; dấu"</b> → upload 3 ảnh PNG nền trong suốt: dấu trường, chữ ký HT, và chữ ký từng GVCN. Sau khi đủ ảnh, xuất học bạ sẽ tự ghép đúng chỗ.'},
+    {q:'⭐ Form học bạ có 6 phần, mỗi phần phải nhập gì?', a:'Khi nhấn vào tên HS, modal học bạ mở ra với 6 section: <b>(1) Lý lịch HS</b> — sổ đăng bộ, ngày nhập học, nơi sinh-quê quán-nơi ở, họ tên cha-mẹ-giám hộ, <b>chiều cao, cân nặng, ngày nghỉ phép/không phép</b>; <b>(2) Nhận xét từng môn</b> theo lớp; <b>(3) Năng lực chung &amp; đặc thù</b>; <b>(4) 5 Phẩm chất</b>; <b>(5) Khen thưởng</b> (tự gợi ý theo XL); <b>(6) Hoàn thành chương trình</b>. Dữ liệu lý lịch lấy từ HSS → QL học sinh; nếu HSS trống, gõ trực tiếp tại form học bạ.'},
+    {q:'⭐ AI Nhận xét hoạt động thế nào, có cần Internet không?', a:'Không cần Internet, không gửi data ra ngoài. Hệ dùng <b>ngân hàng nhận xét chuẩn TT 27</b> sẵn trong app: đọc Mức môn / Năng lực / Phẩm chất + Điểm KTĐK đã nhập → ghép thành nhận xét hoàn chỉnh cho từng môn + 3 NL + 1 đoạn PC. Có 2 cách: <b>"🤖 AI Nhận xét (1 HS)"</b> trong modal — hoặc <b>"🤖 AI Nhận xét"</b> trên toolbar lớp để sinh hàng loạt (chỉ điền cho HS chưa có NX, không ghi đè HS đã có). Sinh xong vẫn nên đọc lại + chỉnh 1-2 câu cho phù hợp HS.'},
+    {q:'⭐ "☁️ Lưu Drive" khác gì với "📄 Xuất Word", dùng khi nào?', a:'<b>📄 Xuất Word</b>: tải file .docx về máy — dùng để <b>in ra dán vào học bạ giấy</b>. <b>☁️ Lưu Drive (Word+PDF)</b>: render Word + server convert sang PDF + lưu cả 2 vào thư mục Drive <code>HocBaSo/2025-2026/Lop&lt;X&gt;/</code> + ghi log HSS_Status — dùng để <b>lưu hồ sơ điện tử cuối năm</b>, gửi link PDF cho phụ huynh, hoặc lưu trữ lâu dài trên Drive trường. Cả lớp: "☁️ Lưu Drive lớp" tự chạy tuần tự ~5s/HS rồi tạo file .ZIP cả lớp.'},
+    {q:'Lưu Drive cả lớp bị treo / báo lỗi, làm gì?', a:'Kiểm tra: (1) Đã đóng/refresh tab khi đang chạy chưa? Không được — phải để chạy đến khi xong (~2.5 phút cho lớp 30 HS). (2) Drive còn dung lượng không? (3) Mạng Internet có ổn? Nếu một vài HS lỗi, alert sẽ liệt kê <b>cụ thể tên HS</b> — chạy lại cho riêng các em đó bằng nút <b>"☁️ Lưu Drive (Word+PDF)"</b> trong modal là được. Toàn bộ file đã render thành công trước đó vẫn lưu trên Drive, không bị xoá.'},
+    {q:'Ai cấu hình ảnh chữ ký, dấu trường?', a:'Admin (HT/PHT) vào QLCL → Sidebar <b>"✍️ Ảnh chữ ký &amp; dấu"</b> — trang chia 2 phần: <b>(1) Toàn trường</b> upload chữ ký HT + dấu trường (PNG nền trong suốt, blur mặc định để bảo mật, bấm 👁 để xem); <b>(2) GVCN từng lớp</b> — 15 GVCN tự sinh theo cột "Lớp PT" trong Phân quyền CBGV, mỗi lớp upload 1 ảnh riêng. Sau khi đủ ảnh, xuất học bạ sẽ tự ghép đúng chỗ mẫu TT 27. Hệ cache localStorage để mở lần sau hiển thị tức thì.'},
 
     // -- QLCL: CSDL NGÀNH --
     {q:'⭐ Xuất báo cáo lên CSDL ngành MOET có 2 cách, nên chọn cách nào?', a:'<b>Cách 1 (Thủ công)</b>: QLCL → "📤 Xuất báo cáo" → "🏛️ Xuất mẫu CSDL ngành" → tải Excel 5 file (5 khối) → tự đăng nhập CSDL ngành + upload từng file. Tốn ~30 phút. <br><b>Cách 2 (Tự động ⚡)</b>: Cài <b>Chrome Extension "HSS Sync"</b> (1 lần) → đăng nhập CSDL ngành sẵn → vào QLCL bấm "🚀 Đồng bộ CSDL ngành" → chọn Khối + Kỳ → extension tự tạo Excel và tải lên CSDL ngành. Chỉ 1-2 phút/khối. <br><b>Khuyến nghị Cách 2</b> — xem hướng dẫn cài trong file <code>Data/HUONG_DAN_CAI.md</code>.'},
@@ -1602,6 +1346,9 @@
     let html = '';
     let totalLeaf = 0, totalFilled = 0;
     HSS.forEach((cat, ci) => {
+      // ⭐ Refactor 2026-05-12 · Bước 4: chỉ liệt kê 9 nhóm hành chính (stt 1-9)
+      const stt = (cat && cat.stt != null) ? Number(cat.stt) : (ci + 1);
+      if (stt >= 10) return;
       const icon = CAT_OV_ICONS[ci] || '📁';
       const color = CAT_OV_COLORS[ci] || '#2d8a6e';
       let groupHtml = '';
@@ -1744,7 +1491,7 @@
       + bodyHtml
       + '<div class="sign-section">'
       + '<div class="sign-block right">'
-      + '<div style="font-style:italic;margin-bottom:8pt">Quảng Châu, ' + dateStr + '</div>'
+      + '<div style="font-style:italic;margin-bottom:8pt">Đô Lương, ' + dateStr + '</div>'
       + '<div class="sign-role">HIỆU TRƯỞNG</div>'
       + '<div class="sign-note">(Ký, ghi rõ họ tên, đóng dấu)</div>'
       + '<div class="sign-name">&nbsp;</div>'
@@ -1818,216 +1565,8 @@
   };
   const TC_ORDER = ['TC1','TC2','TC3','TC4','TC5'];
 
-  function openMCOverview(){
-    const ov = document.getElementById('mcOverlay');
-    ov.style.display = 'flex';
-    ov.classList.add('open');
-    document.getElementById('mcOvSearch').value = '';
-    renderMCOverview();
-  }
-  function closeMCOverview(){
-    const ov = document.getElementById('mcOverlay');
-    ov.style.display = 'none';
-    ov.classList.remove('open');
-    // close legal popup if open
-    const pop = document.getElementById('mcLegalPop');
-    const btn = document.getElementById('mcLegalBtn');
-    if(pop) pop.classList.remove('open');
-    if(btn) btn.classList.remove('open');
-  }
 
-  // 2026-05-09: parse fallback từ m.code khi cột tc/tchi trong sheet bị rỗng
-  // Hỗ trợ format: "[1.1-01]" hoặc "[H1-1.1-01]" hoặc "1.1-01"
-  function _mcResolveTC(m){
-    if (m && m.tc) {
-      var t = String(m.tc).trim().toUpperCase();
-      if (/^TC[1-5]$/.test(t)) return t;
-      if (/^[1-5]$/.test(t)) return 'TC' + t;
-    }
-    var c = String((m && m.code) || '');
-    var match = c.match(/(?:H\d+-)?(\d)\.(\d+)/);
-    return match ? ('TC' + match[1]) : '';
-  }
-  function _mcResolveTchi(m){
-    if (m && m.tchi) {
-      var t = String(m.tchi).trim();
-      if (/^\d\.\d+$/.test(t)) return t;
-    }
-    var c = String((m && m.code) || '');
-    var match = c.match(/(?:H\d+-)?(\d\.\d+)/);
-    return match ? match[1] : '';
-  }
-
-  function _mcGroupByTC(filter){
-    const q = (filter || '').toLowerCase();
-    const out = {};
-    MINHCHUNG.forEach(m => {
-      if(q){
-        const hay = (m.code + ' ' + m.name + ' ' + m.tchi + ' ' + (m.issuer||'') + ' ' + (m.hssCode||'')).toLowerCase();
-        if(!hay.includes(q)) return;
-      }
-      var tc = _mcResolveTC(m);
-      var tchi = _mcResolveTchi(m);
-      if (!tc || !tchi) return; // skip nếu không xác định được vị trí
-      if(!out[tc]) out[tc] = {};
-      if(!out[tc][tchi]) out[tc][tchi] = [];
-      out[tc][tchi].push(m);
-    });
-    return out;
-  }
-
-  function _mcCountLinked(list){
-    let n = 0;
-    list.forEach(m => { if(m.hssCode && String(m.hssCode).trim()) n++; });
-    return n;
-  }
-
-  function renderMCOverview(filter){
-    const q = (filter || '').toLowerCase();
-    const grouped = _mcGroupByTC(filter);
-
-    // Stats on full dataset (not filtered)
-    const totalMC = MINHCHUNG.length;
-    const linkedMC = _mcCountLinked(MINHCHUNG);
-    const statHtml =
-      _mcStat(5, 'Tiêu chuẩn') +
-      _mcStat(17, 'Tiêu chí') +
-      _mcStat(totalMC, 'Minh chứng') +
-      _mcStat(linkedMC + '/' + totalMC, 'Đã liên kết HSS');
-    document.getElementById('mcStats').innerHTML = statHtml;
-
-    // Subtitle
-    document.getElementById('mcOvSub').textContent =
-      '5 Tiêu chuẩn · 17 Tiêu chí · Cập nhật theo TT 22/2024/TT-BGDĐT';
-
-    // TC cards
-    const body = document.getElementById('mcBody');
-    let html = '';
-    let shown = 0;
-    TC_ORDER.forEach((tc, tci) => {
-      if(!grouped[tc]) return;
-      const meta = TC_META[tc] || {icon:'📁'};
-      const tcName = TC_NAMES[tc] || tc;
-      let tcCount = 0;
-      const tchiKeys = Object.keys(grouped[tc]).sort();
-      tchiKeys.forEach(k => tcCount += grouped[tc][k].length);
-      shown += tcCount;
-
-      let innerHtml = '';
-      tchiKeys.forEach(tchi => {
-        const items = grouped[tc][tchi];
-        const tchiName = TCHI_NAMES[tchi] || tchi;
-        const tchiKeyDisp = (typeof _safeCell === 'function') ? _safeCell(tchi) : tchi;
-        innerHtml += '<div class="mc-tchi-head"><b>'+escapeHtml(tchiKeyDisp)+'</b> '+escapeHtml(tchiName)+'</div>';
-        innerHtml += '<table class="mc-table">'+
-          '<colgroup>'+
-            '<col class="c-tt"><col class="c-code"><col class="c-name">'+
-            '<col class="c-issued"><col class="c-issuer"><col class="c-hss"><col class="c-drive">'+
-          '</colgroup>'+
-          '<thead><tr>'+
-            '<th class="mc-h-tt">TT</th>'+
-            '<th>Mã MC</th>'+
-            '<th>Nội dung minh chứng</th>'+
-            '<th class="mc-h-issued">Số, ngày BH</th>'+
-            '<th class="mc-h-issuer">Nơi ban hành</th>'+
-            '<th>Nơi lưu (HSS)</th>'+
-            '<th></th>'+
-          '</tr></thead><tbody>';
-        items.forEach((m, mi) => {
-          const hssDisp = _safeCell(m.hssCode);
-          const codeDisp = _safeCell(m.code);
-          const hasHss = hssDisp && hssDisp.trim();
-          const hasLink = m.link && String(m.link).trim();
-          innerHtml += '<tr>'+
-            '<td class="mc-tt">'+(mi+1)+'</td>'+
-            '<td><span class="mc-code-pill" '+(hasHss?'onclick="mcJumpToHSS(\''+escapeHtml(hssDisp)+'\')" title="Nhảy đến HSS '+escapeHtml(hssDisp)+'"':'')+'>'+escapeHtml(codeDisp)+'</span></td>'+
-            '<td class="mc-name">'+escapeHtml(_safeCell(m.name))+'</td>'+
-            '<td class="mc-meta mc-c-issued">'+escapeHtml(_safeCell(m.issued))+'</td>'+
-            '<td class="mc-meta mc-c-issuer">'+escapeHtml(_safeCell(m.issuer))+'</td>'+
-            '<td class="mc-c-hss">'+(hasHss
-              ? '<span class="mc-hss-chip" onclick="mcJumpToHSS(\''+escapeHtml(hssDisp)+'\')" title="Nhảy đến HSS '+escapeHtml(hssDisp)+'">📂 <b>'+escapeHtml(hssDisp)+'.</b>'+(m.hssName ? ' '+escapeHtml(m.hssName) : '')+'</span>'
-              : '<span class="mc-hss-chip empty">—</span>')+'</td>'+
-            '<td class="mc-c-drive">'+(hasLink
-              ? '<a class="mc-drive" href="'+escapeHtml(m.link)+'" target="_blank" rel="noopener" title="Mở minh chứng trên Drive">📂</a>'
-              : '<span class="mc-drive empty">📂</span>')+'</td>'+
-          '</tr>';
-        });
-        innerHtml += '</tbody></table>';
-      });
-
-      const openCls = (q || tci === 0) ? ' open' : '';
-      html += '<div class="mc-tc'+openCls+'" data-tc="'+tc+'">'+
-        '<div class="mc-tc-head" onclick="this.parentElement.classList.toggle(\'open\')">'+
-          '<div class="mc-tc-icon">'+meta.icon+'</div>'+
-          '<div class="mc-tc-title"><b>Tiêu chuẩn '+tc.substr(2)+'</b><span>'+escapeHtml(tcName)+'</span></div>'+
-          '<span class="mc-tc-badge">'+tcCount+' MC</span>'+
-          '<span class="mc-tc-arrow">▸</span>'+
-        '</div>'+
-        '<div class="mc-tc-body">'+innerHtml+'</div>'+
-      '</div>';
-    });
-
-    body.innerHTML = html || '<div class="mc-empty"><div class="mc-empty-ico">🔎</div>Không tìm thấy minh chứng phù hợp.</div>';
-  }
-
-  function _mcStat(num, label){
-    return '<div class="mc-stat-card"><span class="mc-stat-num">'+num+'</span><span class="mc-stat-label">'+label+'</span></div>';
-  }
-
-  function filterMCOverview(){ renderMCOverview(document.getElementById('mcOvSearch').value.trim()); }
-
-  function mcJumpToHSS(hssCode){
-    closeMCOverview();
-    const searchInput = document.getElementById('recSearch');
-    if(searchInput){
-      searchInput.value = hssCode;
-      searchInput.dispatchEvent(new Event('input'));
-    }
-    setTimeout(() => {
-      const sec = document.getElementById('records');
-      if(sec) sec.scrollIntoView({behavior:'smooth'});
-    }, 200);
-  }
-
-  // ----- Popup "Căn cứ pháp lý" -----
-  function toggleLegalRefs(e){
-    if(e){ e.stopPropagation(); }
-    const pop = document.getElementById('mcLegalPop');
-    const btn = document.getElementById('mcLegalBtn');
-    if(!pop || !btn) return;
-    const open = pop.classList.toggle('open');
-    btn.classList.toggle('open', open);
-    if(open){
-      setTimeout(() => {
-        document.addEventListener('click', _mcLegalClose, { once:true });
-      }, 0);
-    }
-  }
-  function _mcLegalClose(){
-    const pop = document.getElementById('mcLegalPop');
-    const btn = document.getElementById('mcLegalBtn');
-    if(pop) pop.classList.remove('open');
-    if(btn) btn.classList.remove('open');
-  }
-
-  // ----- Bộ lọc an toàn: phát hiện chuỗi Date.toString() (vd "Fri May 01 2026 00:00:00 GMT+0700")
-  //      và convert về "dd/MM/yyyy". Đồng thời bắt chuỗi ISO "2026-05-01T..." -----
-  function _safeCell(v){
-    if (v === null || v === undefined) return '';
-    const s = String(v).trim();
-    if (!s) return '';
-    const m1 = /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{4}/.test(s);
-    const m2 = /^\d{4}-\d{2}-\d{2}T/.test(s);
-    if (m1 || m2){
-      const d = new Date(s);
-      if (!isNaN(d)){
-        const dd = String(d.getDate()).padStart(2,'0');
-        const mm = String(d.getMonth()+1).padStart(2,'0');
-        return dd+'/'+mm+'/'+d.getFullYear();
-      }
-    }
-    return s;
-  }
+  // ⭐ _safeCell — đã chuyển sang core-shared.js Phần 2 (Refactor 2026-05-12 · Bước 1d).
 
   // ============ ADMIN MINH CHỨNG ============
   let _mcRawRows = [];
@@ -2150,171 +1689,6 @@
     });
   }
 
-  // ============ XUẤT DANH MỤC MINH CHỨNG (.doc — Word-compatible HTML) ============
-  // Format theo TT17/2018 + TT22/2024 + CV5942 — giống file In của hệ thống Hồ sơ số.
-  // Output .doc mở được bằng MS Word / LibreOffice / Google Docs — preserve styling.
-  function exportMCExcel(){
-    const cfg = (STATS && STATS.config) || {};
-    const schoolName = (cfg.name || 'Trường Tiểu học').toUpperCase();
-    const schoolAddr = cfg.address || '';
-    const schoolYear = cfg.schoolYear || '2025 - 2026';
-    // Tách địa chỉ → lấy Xã/Phường làm UBND
-    var wardName = '';
-    var parts = schoolAddr.split(',').map(function(s){return s.trim();});
-    if(parts.length){
-      var first = parts[0];
-      // first thường là "Xã X" hoặc "Phường X" — bỏ prefix "Xã"/"Phường"/"Thị trấn"
-      wardName = first.replace(/^(Xã|Phường|Thị trấn)\s+/i,'');
-    }
-    var ubnd = wardName ? 'UBND XÃ ' + wardName.toUpperCase() : 'UBND XÃ ...';
-
-    const data = _mcRawRows && _mcRawRows.length ? _mcRawRows : MINHCHUNG;
-    // Group by TC → tchi để restart STT mỗi tiêu chí
-    const grouped = {};
-    data.forEach(m => {
-      if(!grouped[m.tc]) grouped[m.tc] = {};
-      if(!grouped[m.tc][m.tchi]) grouped[m.tc][m.tchi] = [];
-      grouped[m.tc][m.tchi].push(m);
-    });
-
-    let totalMC = 0;
-    let tableBody = '';
-    TC_ORDER.forEach((tc, tci) => {
-      if(!grouped[tc]) return;
-      // Dòng Tiêu chuẩn (colspan 7)
-      tableBody += '<tr class="tc-row"><td colspan="7"><b>Tiêu chuẩn ' + (tci+1) + ': ' + escapeHtml(TC_NAMES[tc]||'') + '</b></td></tr>';
-      const tchiKeys = Object.keys(grouped[tc]).sort(function(a,b){
-        var na = parseFloat(a), nb = parseFloat(b);
-        return na - nb;
-      });
-      tchiKeys.forEach(tchi => {
-        // Dòng Tiêu chí (colspan 7)
-        tableBody += '<tr class="tchi-row"><td colspan="7"><i>Tiêu chí ' + tchi + '. ' + escapeHtml(TCHI_NAMES[tchi]||'') + '</i></td></tr>';
-        let stt = 0;
-        grouped[tc][tchi].forEach(m => {
-          stt++; totalMC++;
-          tableBody +=
-            '<tr>' +
-              '<td class="c-num">' + stt + '</td>' +
-              '<td class="c-code"><b>' + escapeHtml(m.code||'') + '</b></td>' +
-              '<td class="c-name">' + escapeHtml(m.name||'') + '</td>' +
-              '<td class="c-issued">' + escapeHtml(m.issued||'') + '</td>' +
-              '<td class="c-issuer">' + escapeHtml(m.issuer || (cfg.name || 'Trường Tiểu học')) + '</td>' +
-              '<td class="c-hss"><b>' + escapeHtml(m.hssCode||'') + '</b></td>' +
-              '<td class="c-note">' + escapeHtml(m.note||'') + '</td>' +
-            '</tr>';
-        });
-      });
-    });
-
-    if(!totalMC){
-      tableBody = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#666;font-style:italic">(Chưa có minh chứng nào. Vui lòng nhập qua Admin → Minh chứng hoặc Admin → Nhập dữ liệu.)</td></tr>';
-    }
-
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2,'0');
-    const mm = String(today.getMonth()+1).padStart(2,'0');
-    const yyyy = today.getFullYear();
-    const dateStr = 'ngày ' + dd + ' tháng ' + mm + ' năm ' + yyyy;
-    const placeStr = wardName || '...';
-
-    const html =
-'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-'<head><meta charset="utf-8"><title>Danh mục Minh chứng</title>' +
-'<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
-'<style>' +
-'@page WordSection1 { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.5cm 1.5cm 2cm 2cm; }' +
-'div.WordSection1 { page: WordSection1; }' +
-'body { font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.35; margin: 0; color: #000; }' +
-'.head-tbl { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }' +
-'.head-tbl td { vertical-align: top; padding: 0; border: 0; }' +
-'.head-tbl .left { width: 45%; text-align: center; font-size: 13pt; }' +
-'.head-tbl .right { width: 55%; text-align: center; font-size: 13pt; }' +
-'.head-tbl .ubnd { font-weight: normal; }' +
-'.head-tbl .school { font-weight: bold; }' +
-'.head-tbl .cong-hoa { font-weight: bold; }' +
-'.head-tbl .slogan { font-weight: bold; }' +
-'.head-underline { display: inline-block; border-bottom: 1.5pt solid #000; min-width: 55%; margin-top: 3pt; }' +
-'.doc-title { text-align: center; font-size: 15pt; font-weight: bold; letter-spacing: 0.5pt; margin-top: 12pt; }' +
-'.doc-subtitle { text-align: center; font-size: 13pt; font-weight: bold; margin-top: 4pt; }' +
-'.doc-law { text-align: center; font-size: 11.5pt; font-style: italic; margin-top: 6pt; padding: 0 40pt; }' +
-'.doc-year { text-align: center; font-size: 13pt; margin-top: 6pt; font-weight: bold; }' +
-'table.mc { width: 100%; border-collapse: collapse; margin-top: 12pt; font-size: 11pt; }' +
-'table.mc th, table.mc td { border: 1pt solid #000; padding: 5pt 6pt; vertical-align: middle; }' +
-'table.mc thead th { background: #e5f4ec; font-weight: bold; text-align: center; font-size: 10.5pt; mso-number-format: "\@"; }' +
-'table.mc .c-num { width: 4%; text-align: center; }' +
-'table.mc .c-code { width: 11%; text-align: center; }' +
-'table.mc .c-name { width: 34%; }' +
-'table.mc .c-issued { width: 13%; text-align: center; }' +
-'table.mc .c-issuer { width: 20%; }' +
-'table.mc .c-hss { width: 8%; text-align: center; color: #0c5da5; }' +
-'table.mc .c-note { width: 10%; }' +
-'table.mc tr.tc-row td { background: #2d8a6e; color: #ffffff; font-size: 12pt; padding: 6pt 8pt; }' +
-'table.mc tr.tchi-row td { background: #cfeadd; color: #142a23; padding: 5pt 8pt; }' +
-'.sign-block { width: 100%; margin-top: 14pt; }' +
-'.sign-block .sign-cell { text-align: center; width: 35%; float: right; font-size: 13pt; }' +
-'.sign-block .sign-cell .date { font-style: italic; }' +
-'.sign-block .sign-cell .title { font-weight: bold; margin-top: 2pt; }' +
-'.sign-block .sign-cell .space { height: 50pt; }' +
-'</style></head>' +
-'<body><div class="WordSection1">' +
-// Header table: UBND XÃ ... + CỘNG HÒA
-'<table class="head-tbl"><tr>' +
-  '<td class="left">' +
-    '<div class="ubnd">' + escapeHtml(ubnd) + '</div>' +
-    '<div class="school">' + escapeHtml(schoolName) + '</div>' +
-    '<span class="head-underline"></span>' +
-  '</td>' +
-  '<td class="right">' +
-    '<div class="cong-hoa">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>' +
-    '<div class="slogan">Độc lập - Tự do - Hạnh phúc</div>' +
-    '<span class="head-underline"></span>' +
-  '</td>' +
-'</tr></table>' +
-// Title block
-'<div class="doc-title">BẢNG MÃ HOÁ MINH CHỨNG</div>' +
-'<div class="doc-subtitle">KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC VÀ CÔNG NHẬN ĐẠT CHUẨN QUỐC GIA</div>' +
-'<div class="doc-law">(Theo Thông tư số 17/2018/TT-BGDĐT ngày 22/8/2018, sửa đổi, bổ sung bởi Thông tư số 22/2024/TT-BGDĐT; Hướng dẫn tại Công văn số 5942/BGDĐT-QLCL ngày 28/12/2018 của Bộ Giáo dục và Đào tạo)</div>' +
-'<div class="doc-year">Năm học: ' + escapeHtml(schoolYear) + '</div>' +
-// Main table
-'<table class="mc">' +
-  '<thead><tr>' +
-    '<th class="c-num">STT</th>' +
-    '<th class="c-code">MÃ MINH CHỨNG</th>' +
-    '<th class="c-name">TÊN MINH CHỨNG</th>' +
-    '<th class="c-issued">SỐ, NGÀY BAN HÀNH</th>' +
-    '<th class="c-issuer">NƠI BAN HÀNH HOẶC NHÓM, CÁ NHÂN ĐƯỢC KHẢO SÁT</th>' +
-    '<th class="c-hss">MÃ HSS LIÊN QUAN</th>' +
-    '<th class="c-note">GHI CHÚ</th>' +
-  '</tr></thead>' +
-  '<tbody>' + tableBody + '</tbody>' +
-'</table>' +
-// Signature block
-'<table class="sign-block" style="margin-top:14pt;width:100%"><tr>' +
-  '<td style="width:60%"></td>' +
-  '<td style="width:40%;text-align:center">' +
-    '<div style="font-style:italic">' + escapeHtml(placeStr + ', ' + dateStr) + '</div>' +
-    '<div style="font-weight:bold;margin-top:2pt">HIỆU TRƯỞNG</div>' +
-    '<div style="height:55pt"></div>' +
-  '</td>' +
-'</tr></table>' +
-'</div></body></html>';
-
-    // Xuất file .doc
-    const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'DanhMuc_MinhChung_KDCL_' + yyyy + '.doc';
-    a.click();
-    URL.revokeObjectURL(a.href);
-
-    const msg = document.getElementById('admMcMsg') || document.getElementById('admImportMsg');
-    if(msg){
-      msg.textContent = '✅ Đã tải Danh mục Minh chứng (' + totalMC + ' minh chứng). Mở bằng Word.';
-      msg.className = 'adm-alert ok';
-      setTimeout(function(){ msg.className = 'adm-alert'; }, 4000);
-    }
-  }
 
   // ============ GIỚI THIỆU ============
   function renderAbout(){
@@ -2329,7 +1703,7 @@
     // Cập nhật mô tả với thông tin thật
     var cfg = STATS.config || {};
     var name = cfg.name || 'Trường Tiểu học Thái Sơn';
-    var addr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
+    var addr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
     var tcCount = STATS.totalTeachers || 0;
     document.getElementById('aboutDesc1').textContent = name + ' tọa lạc tại ' + addr + '. Trường luôn nỗ lực xây dựng môi trường giáo dục an toàn, thân thiện, hiệu quả.';
     if(tcCount) document.getElementById('aboutDesc2').textContent = 'Với đội ngũ ' + tcCount + ' CB,GV,NV tận tâm, nhà trường cam kết mang đến chương trình giáo dục chất lượng cao theo CTGDPT 2018.';
@@ -2379,8 +1753,7 @@
   }
 
   // ============ FETCH DATA FROM GAS API ============
-  const CACHE_KEY = 'thMau_data';
-  const CACHE_TTL = 10 * 60 * 1000; // 10 phút — dữ liệu cache hết hạn sau 10 phút
+  // ⭐ CACHE_KEY + CACHE_TTL đã chuyển sang core-shared.js Phần 3 (Refactor 2026-05-12 · Bước 1d).
 
   // 2026-05-10: Lọc Nhóm 9 (Hồ sơ CBGV-NV). Module hồ sơ nhân sự đã có riêng ở
   // mục #teachers (Hồ sơ CBGVNV). Trong Danh mục Hồ sơ số chỉ giữ lại hồ sơ
@@ -2467,112 +1840,11 @@
     }
   }
 
-  function loadError(msg){
-    const ls = document.getElementById('loadScreen');
-    if(!ls) return;
-    // TEMPLATE MODE: khi chưa cấu hình API → cho phép bỏ qua để vào Admin cấu hình
-    const isTemplate = String(msg||'').includes('Chưa cấu hình');
-    const extraBtn = isTemplate
-      ? `<button class="btn btn-ghost" style="margin-left:10px;background:rgba(255,255,255,.18);color:white;border:1px solid rgba(255,255,255,.35)" onclick="(function(){ const ls=document.getElementById('loadScreen'); if(ls){ls.classList.add('done');setTimeout(()=>ls.remove(),500);} boot({hss:[],teachers:[],students:[],classes:[],images:[],minhchung:[],stats:{totalRecords:0,totalTeachers:0,totalClasses:0,totalChildren:0,config:{}}}, false); setTimeout(function(){ if(typeof openAdmin==='function') openAdmin(); var t=document.querySelector('.admin-tab[data-tab=\\'info\\']'); if(t) t.click(); }, 400); })()">⚙ Vào Admin cấu hình</button>`
-      : '';
-    ls.innerHTML = `
-      <div style="text-align:center;padding:40px;max-width:560px">
-        <div style="font-size:3rem;margin-bottom:20px">${isTemplate ? '🧩' : '⚠️'}</div>
-        <h3 style="font-family:Fraunces,serif;margin-bottom:12px">${isTemplate ? 'Template chưa cấu hình' : 'Không tải được dữ liệu'}</h3>
-        <p style="opacity:.9;margin-bottom:8px;font-size:.95rem">${escapeHtml(msg)}</p>
-        <p style="opacity:.7;font-size:.82rem;margin-bottom:20px">${isTemplate ? 'Bấm "Vào Admin cấu hình" để nhập URL Apps Script + thông tin trường, hoặc xem <b>backend/HUONG_DAN_CAI_DAT.md</b> để cài đặt backend.' : 'Kiểm tra lại URL API và quyền truy cập "Anyone" của Web App.'}</p>
-        <button class="btn btn-primary" onclick="location.reload()">Thử lại</button>
-        ${extraBtn}
-      </div>`;
-  }
+  // ⭐ loadError, fetchGAS, loadData — đã chuyển sang core-shared.js Phần 3.
+  //   loadData() cũ → gọi `loadDataShared(boot)` ở cuối file. Hàm `boot(data, isCache)`
+  //   ngay phía trên giữ nguyên trong app.js (vì render UI riêng của HSS).
+  //   (Refactor 2026-05-12 · Bước 1d)
 
-  // JSONP fetch với retry tự động
-  function fetchGAS(onOk, onFail, retries){
-    retries = retries == null ? 2 : retries;
-    const url = window._admApiOverride || API_URL;
-    if(!url || url.indexOf('AKfyc') === -1){
-      onFail('Chưa cấu hình API_URL.'); return;
-    }
-    const cbName = 'jsonpCb_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-    const script = document.createElement('script');
-    const timer = setTimeout(() => {
-      cleanup();
-      if(retries > 0){ fetchGAS(onOk, onFail, retries - 1); }
-      else { onFail('Quá hạn chờ phản hồi từ máy chủ (đã thử ' + (3 - retries) + ' lần).'); }
-    }, 20000);
-
-    function cleanup(){ clearTimeout(timer); delete window[cbName]; try{ script.remove(); } catch(e){} }
-
-    window[cbName] = function(resp){
-      cleanup();
-      if(resp && resp.ok){ onOk(resp.data); }
-      else if(retries > 0){ fetchGAS(onOk, onFail, retries - 1); }
-      else { onFail(resp && resp.error ? resp.error : 'Phản hồi không hợp lệ.'); }
-    };
-    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cbName + '&action=all';
-    script.onerror = function(){
-      cleanup();
-      if(retries > 0){ fetchGAS(onOk, onFail, retries - 1); }
-      else { onFail('Không gọi được API. Kiểm tra URL hoặc quyền triển khai.'); }
-    };
-    document.body.appendChild(script);
-  }
-
-  // Khởi động: ưu tiên cache → hiển thị ngay → refresh ngầm
-  function loadData(){
-    // 1) Ưu tiên dữ liệu từ early-fetch <head> (đã về xong trước khi main script chạy)
-    if(window.__earlyData && window.__earlyData.ok){
-      const data = window.__earlyData.data;
-      try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), d: data})); } catch(e){}
-      boot(data, false);
-      window.__earlyData = null;
-      return;
-    }
-
-    // 2) Dùng cache localStorage nếu có (hiển thị ngay + refresh ngầm)
-    try{
-      const raw = localStorage.getItem(CACHE_KEY);
-      if(raw){
-        const cache = JSON.parse(raw);
-        if(cache && cache.d){
-          boot(cache.d, true);
-          // Khi early-fetch xong sau khi boot, nuốt kết quả vào cache
-          const poll = setInterval(() => {
-            if(window.__earlyData && window.__earlyData.ok){
-              clearInterval(poll);
-              try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), d: window.__earlyData.data})); } catch(e){}
-              window.__earlyData = null;
-            } else if(window.__earlyFailed){ clearInterval(poll); }
-          }, 500);
-          setTimeout(() => clearInterval(poll), 30000);
-          return;
-        }
-      }
-    } catch(e){ try{ localStorage.removeItem(CACHE_KEY); } catch(x){} }
-
-    // 3) Không có cache, early-fetch chưa về → chờ early-fetch (check 100ms một lần) rồi fallback
-    let waited = 0;
-    const waitEarly = setInterval(() => {
-      waited += 200;
-      if(window.__earlyData && window.__earlyData.ok){
-        clearInterval(waitEarly);
-        const data = window.__earlyData.data;
-        try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), d: data})); } catch(e){}
-        boot(data, false);
-        window.__earlyData = null;
-      } else if(window.__earlyFailed || waited >= 8000){
-        clearInterval(waitEarly);
-        // Fallback về fetchGAS truyền thống
-        fetchGAS(
-          function(data){
-            try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts: Date.now(), d: data})); } catch(e){}
-            boot(data, false);
-          },
-          function(msg){ loadError(msg); }
-        );
-      }
-    }, 200);
-  }
   // ============ ADMIN PANEL ============
   const ADM_KEY = 'thAdmin';
   const ADM_DEFAULT_PWD = 'admin123';
@@ -3273,8 +2545,8 @@
   // Build mẫu DS Học Sinh đẹp
   function _buildStyledHSSheet(){
     var cfg = (window.STATS && STATS.config) || {};
-    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
-    var schoolAddr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
+    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC THÁI SƠN';
+    var schoolAddr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['STT','Mã lớp','Mã HS','Họ và tên','Ngày sinh','Giới tính',
                    'Dân tộc','Tôn giáo','Tỉnh/TP','','Xã/Phường','Tổ/Thôn/Xóm',
@@ -3343,9 +2615,9 @@
     } else {
       // Mẫu trống — tạo 3 hàng demo để admin biết format
       var demos = [
-        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 5', 'Quảng Châu, Nghệ An', '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
-        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 3', 'Quảng Châu, Nghệ An', '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
-        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Quảng Châu', 'Xóm 7', 'Quảng Châu, Nghệ An', '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
+        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 5', 'Đô Lương, Nghệ An', '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
+        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 3', 'Đô Lương, Nghệ An', '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
+        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 7', 'Đô Lương, Nghệ An', '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
       ];
       demos.forEach(function(rowVals, idx){
         var isAlt = (idx % 2 === 1);
@@ -3413,8 +2685,8 @@
   // Build mẫu DSGV — cùng template style
   function _buildStyledGVSheet(){
     var cfg = (window.STATS && STATS.config) || {};
-    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC DIỄN LIÊN';
-    var schoolAddr = cfg.address || 'Xã Quảng Châu, Tỉnh Nghệ An';
+    var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC THÁI SƠN';
+    var schoolAddr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['TT','Họ và tên','Ngày sinh','Chức vụ','Trình độ','SĐT','Gmail','Link hồ sơ'];
     var COL_COUNT = headers.length;  // 8
@@ -3909,331 +3181,10 @@
     host._t = setTimeout(() => host.classList.remove('show'), 3500);
   }
 
-  loadData();
+  // ⭐ Refactor 2026-05-12 · Bước 1d: gọi loadDataShared (core-shared.js) thay loadData()
+  //   cũ. Truyền `boot` (định nghĩa ở trên) làm callback render UI cho HSS.
+  loadDataShared(boot);
 
-/* ===== Phần 2: Bridge Hồ sơ số → Hệ thống KĐCL ===== */
-(function(){
-  function _admGet(){
-    try {
-      const raw = localStorage.getItem('hsys_admin_cfg_v1') || localStorage.getItem('hsoSoCfg') || '{}';
-      return JSON.parse(raw) || {};
-    } catch(e){ return {}; }
-  }
-
-  window._buildSchoolInfoPayload = function(){
-    const adm = _admGet();
-    const cfg = (window.STATS && window.STATS.config) || {};
-    const name = adm.schoolName || cfg.name || 'Trường Tiểu học';
-    const addr = adm.schoolAddr || cfg.address || '';
-    let ward = '', province = '';
-    const m = addr.match(/^(.*?),\s*(.+)$/);
-    if (m) { ward = m[1].trim(); province = m[2].trim(); }
-    const yr = adm.schoolYear || cfg.schoolYear || '';
-    let yf = '', yt = '';
-    const ym = yr.match(/(\d{4})\s*[–-]\s*(\d{4})/);
-    if (ym) { yf = ym[1]; yt = ym[2]; }
-    const st = window.STATS || {};
-    return {
-      name: name,
-      type: 'tieuhoc',
-      address: addr,
-      ward: ward,
-      province: province,
-      principal: adm.principal || '',
-      phone: adm.schoolPhone || cfg.phone || '',
-      email: adm.schoolEmail || cfg.email || '',
-      academicYearFrom: yf,
-      academicYearTo: yt,
-      numStudents: st.totalChildren || st.numStudents || 0,
-      numClasses: st.totalClasses || st.numClasses || 0,
-      numTeachers: st.totalTeachers || st.numTeachers || 0,
-      numStaff: st.numStaff || 0
-    };
-  };
-
-  // 2026-05-09 fix: cùng bug như _buildMinhChungTree — MINHCHUNG là array
-  // of objects, không phải raw rows. Sửa: parse object + group theo TC/tchi
-  // rồi sinh markdown cho prompt AI báo cáo TĐG.
-  window._buildEvidencePayload = function(){
-    const MC = window.MINHCHUNG;
-    if (!Array.isArray(MC) || !MC.length) return '';
-    const _TC_NAMES_LOC = (typeof TC_NAMES !== 'undefined') ? TC_NAMES : {};
-    const _TCHI_NAMES_LOC = (typeof TCHI_NAMES !== 'undefined') ? TCHI_NAMES : {};
-
-    const tcMap = {};
-    const tcOrder = [];
-    MC.forEach(function(m){
-      if (!m || typeof m !== 'object') return;
-      const tc = String(m.tc || '').trim();
-      const tchi = String(m.tchi || '').trim();
-      if (!tc || !tchi) return;
-      if (!tcMap[tc]) { tcMap[tc] = { tchiMap: {}, tchiOrder: [] }; tcOrder.push(tc); }
-      if (!tcMap[tc].tchiMap[tchi]) { tcMap[tc].tchiMap[tchi] = []; tcMap[tc].tchiOrder.push(tchi); }
-      tcMap[tc].tchiMap[tchi].push(m);
-    });
-
-    const lines = ['# Danh mục minh chứng đã mã hoá (từ Hồ sơ số Tiểu học)'];
-    tcOrder.sort();
-    tcOrder.forEach(function(tc){
-      lines.push('\n## ' + tc + ' · ' + (_TC_NAMES_LOC[tc] || ''));
-      const obj = tcMap[tc];
-      obj.tchiOrder.sort(function(a, b){
-        const aa = a.split('.').map(Number);
-        const bb = b.split('.').map(Number);
-        return (aa[0] - bb[0]) || (aa[1] - bb[1]);
-      });
-      obj.tchiOrder.forEach(function(tchi){
-        lines.push('\n### Tiêu chí ' + tchi + ' · ' + (_TCHI_NAMES_LOC[tchi] || ''));
-        obj.tchiMap[tchi].forEach(function(m){
-          const code = String(m.code || '').trim();
-          const noiDung = String(m.name || '').trim();
-          const nguon = String(m.issuer || '').trim();
-          const ngayBH = String(m.issued || '').trim();
-          if (!code) return;
-          let line = '- ' + code + ' ' + noiDung;
-          if (nguon || ngayBH) line += ' _(' + [nguon, ngayBH].filter(Boolean).join(', ') + ')_';
-          lines.push(line);
-        });
-      });
-    });
-    return lines.join('\n');
-  };
-
-  // 2026-05-09 fix: MINHCHUNG là array of OBJECTS từ getMinhChung()
-  // (stt, tc, tchi, code, name, issued, issuer, hssCode, link, note, hssName).
-  // Logic cũ đọc r[0], r[2]... như raw rows → tree luôn rỗng → KĐCL ẩn
-  // nút "📋 Minh chứng HSS". Sửa: group object theo tc → tchi → items.
-  window._buildMinhChungTree = function(){
-    const MC = window.MINHCHUNG;
-    if (!Array.isArray(MC) || !MC.length) return [];
-
-    // Lấy TC_NAMES, TCHI_NAMES từ scope ngoài (đã định nghĩa line ~1474+)
-    const _TC_NAMES_LOC = (typeof TC_NAMES !== 'undefined') ? TC_NAMES : {};
-    const _TCHI_NAMES_LOC = (typeof TCHI_NAMES !== 'undefined') ? TCHI_NAMES : {};
-
-    const tcMap = {};
-    const tcOrder = [];
-
-    MC.forEach(function(m){
-      if (!m || typeof m !== 'object') return;
-      const tc = String(m.tc || '').trim();
-      const tchi = String(m.tchi || '').trim();
-      if (!tc || !tchi) return;
-
-      if (!tcMap[tc]) {
-        tcMap[tc] = { id: tc, title: _TC_NAMES_LOC[tc] || tc, name: '', tieuchi: {}, _order: [] };
-        tcOrder.push(tc);
-      }
-      if (!tcMap[tc].tieuchi[tchi]) {
-        tcMap[tc].tieuchi[tchi] = { id: tchi, title: _TCHI_NAMES_LOC[tchi] || '', name: '', items: [] };
-        tcMap[tc]._order.push(tchi);
-      }
-      tcMap[tc].tieuchi[tchi].items.push({
-        code: String(m.code || ''),
-        content: String(m.name || ''),
-        issueDate: String(m.issued || ''),
-        issuer: String(m.issuer || ''),
-        hssRef: String(m.hssCode || ''),
-        note: String(m.note || '')
-      });
-    });
-
-    // Sort TC1 → TC5 và sort tchi 1.1, 1.2, 2.1, ...
-    tcOrder.sort();
-    return tcOrder.map(function(tc){
-      const obj = tcMap[tc];
-      obj._order.sort(function(a, b){
-        const aa = a.split('.').map(Number);
-        const bb = b.split('.').map(Number);
-        return (aa[0] - bb[0]) || (aa[1] - bb[1]);
-      });
-      return {
-        id: obj.id,
-        title: obj.title,
-        name: obj.name,
-        tieuchi: obj._order.map(function(k){ return obj.tieuchi[k]; })
-      };
-    });
-  };
-
-  window._buildHssDataPayload = function(){
-    try {
-      const teachers = (window.TEACHERS || []).map(t => ({
-        name: t[1] || '',
-        dob: t[2] || '',
-        role: t[3] || '',
-        degree: t[4] || '',
-        phone: t[5] || '',
-        email: t[6] || ''
-      })).filter(t => t.name);
-      const teacherStats = { total: teachers.length, byRole: {}, byDegree: {} };
-      teachers.forEach(t => {
-        const role = t.role || 'Khác';
-        teacherStats.byRole[role] = (teacherStats.byRole[role] || 0) + 1;
-        const deg = t.degree || 'Khác';
-        teacherStats.byDegree[deg] = (teacherStats.byDegree[deg] || 0) + 1;
-      });
-      const classes = (window.CLASSES || []).map(c => {
-        const students = c.students || [];
-        let male = 0, female = 0, ethnic = {};
-        students.forEach(s => {
-          const gender = (s[5] || s.gender || '').toString().toLowerCase();
-          if (gender.indexOf('nữ') >= 0 || gender === 'nu' || gender === 'f') female++;
-          else if (gender.indexOf('nam') >= 0 || gender === 'm') male++;
-          const dt = s[6] || s.ethnic || 'Kinh';
-          if (dt) ethnic[dt] = (ethnic[dt] || 0) + 1;
-        });
-        return {
-          name: c.name || '',
-          grade: c.grade || c.ageGroup || '',
-          total: students.length,
-          male: c.male || male,
-          female: c.female || female,
-          ethnic: ethnic
-        };
-      });
-      const studentStats = { total: 0, male: 0, female: 0, ethnic: {}, byGrade: {} };
-      classes.forEach(c => {
-        studentStats.total += c.total;
-        studentStats.male += c.male || 0;
-        studentStats.female += c.female || 0;
-        const g = c.grade || '';
-        if (g) studentStats.byGrade[g] = (studentStats.byGrade[g] || 0) + c.total;
-        Object.keys(c.ethnic || {}).forEach(dt => {
-          studentStats.ethnic[dt] = (studentStats.ethnic[dt] || 0) + c.ethnic[dt];
-        });
-      });
-      return { teachers, teacherStats, classes, studentStats };
-    } catch(e) { console.warn('[_buildHssDataPayload]', e); return null; }
-  };
-})();
-
-/* ===== Phần 3: View-swap glue ===== */
-(function(){
-  // LOCK __tdgBackToHso: setter no-op để TDG's IIFE (nếu có) không thể override.
-  var _backFn = function(){ showHoso(); };
-  try {
-    Object.defineProperty(window, '__tdgBackToHso', {
-      get: function(){ return _backFn; },
-      set: function(){},
-      configurable: false
-    });
-  } catch(e) { window.__tdgBackToHso = _backFn; }
-
-  window.__TDG_FROM_HSO__ = true;
-  window.__TDG_BACK_URL__ = location.href.replace(/#.*$/, '');
-
-  // Lazy load React + Babel + Tailwind + Mammoth — chỉ khi user bấm KĐCL lần đầu
-  let _kdclLibsPromise = null;
-  function _loadScriptOnce(src, attrs){
-    return new Promise(function(resolve, reject){
-      var exists = document.querySelector('script[data-lib="'+src+'"]');
-      if (exists) { resolve(); return; }
-      var s = document.createElement('script');
-      s.src = src;
-      s.setAttribute('data-lib', src);
-      if (attrs && attrs.crossOrigin) s.crossOrigin = attrs.crossOrigin;
-      s.onload = function(){ resolve(); };
-      s.onerror = function(){ reject(new Error('Không tải được: ' + src)); };
-      document.head.appendChild(s);
-    });
-  }
-  function _setKdclBootText(txt){
-    var el = document.getElementById('bootMain');
-    if (el) el.textContent = txt;
-  }
-  async function loadKdclLibs(){
-    if (_kdclLibsPromise) return _kdclLibsPromise;
-    _kdclLibsPromise = (async function(){
-      _setKdclBootText('Đang đồng bộ dữ liệu. Vui lòng đợi!');
-      await _loadScriptOnce('https://cdn.tailwindcss.com');
-      try { if (window.tailwind) window.tailwind.config = { corePlugins: { preflight: false } }; } catch(e){}
-      await _loadScriptOnce('https://unpkg.com/react@18/umd/react.production.min.js', { crossOrigin: '' });
-      await _loadScriptOnce('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', { crossOrigin: '' });
-      await _loadScriptOnce('https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js');
-      await _loadScriptOnce('https://unpkg.com/@babel/standalone/babel.min.js');
-      var srcEl = document.getElementById('tdgReactSource');
-      if (!srcEl) throw new Error('Không tìm thấy #tdgReactSource');
-      var src = srcEl.textContent;
-      var transformed = window.Babel.transform(src, { presets: ['react'] }).code;
-      var execScript = document.createElement('script');
-      execScript.textContent = transformed;
-      document.body.appendChild(execScript);
-    })();
-    return _kdclLibsPromise;
-  }
-
-  function _buildBridgePayload(){
-    var si = typeof window._buildSchoolInfoPayload === 'function' ? window._buildSchoolInfoPayload() : {};
-    var hssData = typeof window._buildHssDataPayload === 'function' ? window._buildHssDataPayload() : null;
-    if (hssData && hssData.teacherStats) si.numTeachers = hssData.teacherStats.total;
-    if (hssData && hssData.studentStats) si.numStudents = hssData.studentStats.total;
-    if (hssData && hssData.classes) si.numClasses = hssData.classes.length;
-    return {
-      schoolInfo: si,
-      evidenceList: typeof window._buildEvidencePayload === 'function' ? window._buildEvidencePayload() : '',
-      hssMinhChung: typeof window._buildMinhChungTree === 'function' ? window._buildMinhChungTree() : [],
-      hssData: hssData
-    };
-  }
-
-  window.showKdcl = function(ev){
-    if (ev && ev.preventDefault) ev.preventDefault();
-    // ⭐ Khoá cấp 1: KĐCL/TĐG là khu vực nội bộ — chỉ Hiệu trưởng/PHT vào.
-    if (typeof requireAuth === 'function' && !_hasLevel('admin')) {
-      requireAuth('admin', function(){ window.showKdcl(); });
-      return false;
-    }
-    document.body.classList.add('kdcl-active');
-    window.scrollTo(0, 0);
-    try {
-      var payload = _buildBridgePayload();
-      window.__HSS_MINHCHUNG__ = payload.hssMinhChung;
-      window.__TDG_PENDING_BRIDGE__ = payload;
-    } catch(e) { console.warn('[bridge] build payload fail:', e); }
-    (async function(){
-      try {
-        await loadKdclLibs();
-        await new Promise(function(r){ requestAnimationFrame(function(){ setTimeout(r, 120); }); });
-        if (window.__TDG_PENDING_BRIDGE__) {
-          window.dispatchEvent(new CustomEvent('tdg:applyBridge', { detail: window.__TDG_PENDING_BRIDGE__ }));
-        }
-      } catch(e) {
-        console.error('[loadKdclLibs]', e);
-        _setKdclBootText('⚠ Lỗi đồng bộ dữ liệu: ' + e.message + ' — Kiểm tra mạng + F5');
-      }
-    })();
-    return false;
-  };
-
-  window.showHoso = function(){
-    document.body.classList.remove('kdcl-active');
-    window.scrollTo(0, 0);
-  };
-
-  // ====== QLCL view toggle ======
-  // ⭐ REFACTOR 2026-05-05: QLCL chuyển sang multi-page → mở qlcl.html standalone.
-  //    Sync auth state qua localStorage để qlcl-app.js đọc lại không cần đăng nhập lần 2.
-  window.showQlcl = function(ev){
-    if(ev && ev.preventDefault) ev.preventDefault();
-    // STATE của HSS (file này) không expose lên window, nên các field user/role
-    // sẽ là '' / 'GV' default. qlcl-app.js sẽ tự đọc lại từ tab Users qua sessionToken.
-    try {
-      var auth = {
-        user:  (typeof STATE !== 'undefined' && STATE.user) ? STATE.user : '',
-        role:  (typeof STATE !== 'undefined' && STATE.role) ? STATE.role : 'GV',
-        lop:   (typeof STATE !== 'undefined' && STATE.classRoleLop) ? STATE.classRoleLop : '',
-        token: (typeof getAuthToken === 'function') ? (getAuthToken() || '') : '',
-        hoten: (typeof STATE !== 'undefined' && STATE.user) ? STATE.user : '',
-        savedAt: new Date().toISOString()
-      };
-      localStorage.setItem('th_auth_v1', JSON.stringify(auth));
-    } catch(e) { console.warn('[QLCL] Không sync được auth state:', e); }
-    window.location.href = 'qlcl.html';
-    return false;
-  };
-
-})();
 
 /* ===== Phần 5: Scroll-to-top floating button ===== */
 (function(){

@@ -1,35 +1,44 @@
-# Claude Code local config (chứa allowlist & path máy local)
-.claude/settings.local.json
+# Claude Code workspace settings (local, không share)
+.claude/
 
-# Backup folders trong templates-hocba (chỉ giữ template chính)
-templates-hocba/_backup-*
-templates-hocba/_build/_*
+# Clasp credentials (KHÔNG commit — chỉ tồn tại ở ~/.clasprc.json)
+.clasprc.json
 
-# Editor/OS junk
+# OS junk
+desktop.ini
 .DS_Store
 Thumbs.db
-desktop.ini
-*~
-*.swp
-*.swo
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Editor
 .vscode/
 .idea/
+*.swp
+*~
 
-# Backup file lung tung
+# Render intermediate (tạo lại được từ template)
+_render_*.html
+
+# Backup files
 *.bak
 *.bak.*
-*.tmp
+*.backup
 *.orig
-
-# Node modules (nếu sau này dùng clasp)
-node_modules/
-.clasprc.json
-.clasp.json
 
 # Logs
 *.log
-npm-debug.log*
 
-# OS thumbnail
-*.JPG~
-*.jpg~
+# Dữ liệu nội bộ KHÔNG public
+# (HS-GV-điểm sẽ ở Google Sheet riêng, không trong repo)
+Data/HocSinh/
+Data/DSGV/
+Data/BACKUP_*.gsheet
+Data/THDienLien_*.gsheet
+Data/THThaiSon_*.gsheet
+*.gsheet
+
+# Chữ ký số / dấu trường (KHÔNG public)
+Data/ChuKy_*
+Data/Dau_Truong*
+Data/Signatures/

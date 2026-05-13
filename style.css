@@ -706,6 +706,22 @@
   .nav-links a{color:white;text-decoration:none;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);transition:all .22s;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 10px -6px rgba(0,0,0,.25)}
   .nav-links a:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);transform:translateY(-2px);box-shadow:0 8px 18px -8px rgba(0,0,0,.35)}
   .nav-links a.nav-external .nav-ext-ic{font-size:.78rem;opacity:.7;margin-left:2px}
+  /* ⭐ Trang đang xem: subtle highlight (không phá uniform) — Refactor 2026-05-12 */
+  .nav-links a[aria-current="page"]{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.55);font-weight:700}
+  /* ⭐ Stats hero (KĐCL/ĐBCL) — bg trắng đặc + text đậm cho rõ — 2026-05-12 */
+  .stats-hero{position:relative;max-width:900px;margin:-30px auto 0;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.6);border-radius:16px;padding:18px 28px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;box-shadow:0 14px 38px -10px rgba(0,0,0,.25);z-index:5}
+  .stats-hero .stat-item{text-align:center;border-right:1px solid #e2e8f0;padding:4px 0}
+  .stats-hero .stat-item:last-child{border-right:none}
+  .stats-hero .stat-num{display:block;font-family:'Fraunces',serif;font-weight:700;font-size:1.7rem;color:var(--ink);line-height:1.1;letter-spacing:.3px}
+  .stats-hero .stat-label{display:block;color:#475569;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
+  @media(max-width:768px){
+    .stats-hero{grid-template-columns:repeat(2,1fr);gap:10px;padding:14px 18px;margin:-20px 4vw 0}
+    .stats-hero .stat-item:nth-child(2){border-right:none}
+    .stats-hero .stat-num{font-size:1.5rem}
+  }
+  @media(max-width:480px){
+    .stats-hero{grid-template-columns:repeat(2,1fr)}
+  }
   /* ===== Global toast (thông báo nâng cấp) ===== */
   .global-toast{position:fixed;top:90px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,var(--g-deep),var(--g2));color:white;padding:14px 22px;border-radius:14px;font-size:.9rem;font-weight:500;box-shadow:0 20px 50px -18px rgba(30,107,84,.55),0 4px 10px rgba(0,0,0,.15);z-index:9999;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px);opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.2,.9,.25,1.1);border:1px solid rgba(255,255,255,.2)}
   .global-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
