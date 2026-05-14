@@ -215,6 +215,17 @@ function doPost(e) {
     return _jsonOut_(_qtDoLogin(body.username, body.password));
   }
 
+  // 2026-05-14: action 'seedMinhChung' — chạy seedMinhChungFromDefault qua HTTP
+  // (chỉ Admin, đã pass _authCheck_ ở trên). Cho phép maintenance remote, không
+  // cần mở Apps Script editor.
+  if (action === 'seedMinhChung') {
+    try {
+      return _jsonOut_(seedMinhChungFromDefault());
+    } catch (err) {
+      return _jsonOut_({ ok: false, error: 'seedMinhChung lỗi: ' + (err.message || err) });
+    }
+  }
+
   // Action 'updateAuthTokens' — HT đổi 2 mã trường qua UI Admin.
   // Đã pass _authCheck_ với requiredLevel='admin' ở trên → an toàn để lưu.
   if (action === 'updateAuthTokens') {
@@ -623,7 +634,7 @@ const _WRITE_ACTIONS_ = [
   // Đổi mã trường (chỉ Admin, lưu vào Script Properties)
   'updateAuthTokens',
   // HSS
-  'updateHSS','updateMinhChung','resetMinhChungSeed','importTeachers','importStudents','updateConfig',
+  'updateHSS','updateMinhChung','resetMinhChungSeed','seedMinhChung','importTeachers','importStudents','updateConfig',
   // 2026-05-07: HSS — Quản lý HS đơn lẻ (Phase 2)
   'addStudent','updateStudent','transferStudent','restoreStudent','deleteStudentPermanent',
   // 2026-05-09: Phase 1 hồ sơ số học bạ — chữ ký + dấu (chỉ HT/PHT/Admin)
@@ -645,7 +656,7 @@ const _ADMIN_ACTIONS_ = [
   // Đổi mã trường — chỉ HT/PHT
   'updateAuthTokens',
   // HSS — cấu hình trường, import dữ liệu, danh mục minh chứng
-  'updateHSS','updateMinhChung','resetMinhChungSeed',
+  'updateHSS','updateMinhChung','resetMinhChungSeed','seedMinhChung',
   'importTeachers','importStudents','updateConfig',
   // 2026-05-07: Quản lý HS đơn lẻ — chỉ admin (HT/PHT)
   'addStudent','updateStudent','transferStudent','restoreStudent','deleteStudentPermanent',
