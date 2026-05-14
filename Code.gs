@@ -1704,24 +1704,52 @@ function seedMinhChungFromDefault() {
     Logger.log('⚠ Không có UI context — chạy headless, tự xác nhận.');
   }
 
-  // Clear data cũ (row 2 trở xuống), giữ header row 1
-  if (lastRow > 1) {
-    sh.getRange(2, 1, lastRow - 1, 10).clearContent();
-  }
+  // 2026-05-14: populate cột I (Link Drive) từ Danh muc HSS map
+  //   _readHssLiveMap() → { '1.1.1': {link, name, ...}, '1.1.2': {...}, ... }
+  //   MC_ROWS[i][7] = hssCode → tra map → set MC_ROWS[i][8] = link
+  let hssMap = {};
+  try { hssMap = _readHssLiveMap(); } catch (e) { Logger.log('⚠ _readHssLiveMap lỗi: ' + e.message); }
+  let linkedCount = 0;
+  MC_ROWS.forEach(function(row) {
+    const hssCode = String(row[7] || '').trim();
+    if (hssCode && hssMap[hssCode] && hssMap[hssCode].link) {
+      row[8] = hssMap[hssCode].link;
+      linkedCount++;
+    }
+  });
+  Logger.log('🔗 Đã link ' + linkedCount + '/' + MC_ROWS.length + ' MC với Drive URL từ Danh muc HSS.');
+
+  // Clear data cũ TOÀN BỘ sheet (kể cả format/validation, để loại bỏ data validation
+  // có thể block 1 số row khi setValues — đây là root cause của bug "94/95 row").
+  // Giữ header bằng cách re-set sau khi xoá toàn bộ.
+  const headerRange = sh.getRange(1, 1, 1, 10);
+  const headerValues = headerRange.getValues();
+  const headerBg = headerRange.getBackground();
+  const headerFg = headerRange.getFontColor();
+  const headerWeight = headerRange.getFontWeight();
+  sh.clear({contentsOnly: false}); // xoá content + format + data validation
+  sh.getRange(1, 1, 1, 10).setValues(headerValues)
+    .setBackground(headerBg).setFontColor(headerFg).setFontWeight(headerWeight);
+  sh.setFrozenRows(1);
+
   // Ghi 95 MC mới
   sh.getRange(2, 1, MC_ROWS.length, 10).setValues(MC_ROWS);
 
   // Clear cache backend
   try { CacheService.getScriptCache().remove('allData'); } catch(e) {}
 
-  Logger.log('✅ Đã seed ' + MC_ROWS.length + ' MC vào tab "' + SHEET_MC + '"');
+  // Verify: đọc lại số row đã ghi
+  const verifyRow = sh.getLastRow();
+  const writtenRows = Math.max(0, verifyRow - 1);
+  Logger.log('✅ Đã seed ' + MC_ROWS.length + ' MC, sheet hiện có ' + writtenRows + ' row data.');
+  Logger.log('   🔗 ' + linkedCount + ' MC đã gắn link Drive từ Danh muc HSS.');
   Logger.log('Bước tiếp:');
   Logger.log('  1. Mở Hồ sơ số (HSS) → Admin → Minh chứng');
-  Logger.log('  2. Chỉnh Số/ngày BH + Nơi BH + Link Drive cho từng MC');
+  Logger.log('  2. Chỉnh Số/ngày BH + Nơi BH (Link Drive đã tự gắn từ HSS)');
   Logger.log('  3. Bấm 💾 Lưu lên Sheet → MC đồng bộ');
   Logger.log('════════════════════════════════════════════════════════════════');
 
-  return { ok: true, seeded: MC_ROWS.length };
+  return { ok: true, seeded: MC_ROWS.length, linked: linkedCount, writtenRows: writtenRows };
 }
 
 function resetHssLinksForNewSchool() {
