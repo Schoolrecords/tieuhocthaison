@@ -143,6 +143,20 @@ function doGet(e) {
     const password = (e && e.parameter && e.parameter.password) || '';
     return _jsonOut_(_qtDoLogin(username, password));
   }
+  // 2026-05-14: action 'seedMinhChung' qua GET — admin maintenance one-shot
+  // Token guard tránh public abuse. Curl: ?action=seedMinhChung&token=AdminTS-2026
+  if (action === 'seedMinhChung') {
+    const token = (e && e.parameter && e.parameter.token) || '';
+    const t = _getAuthTokens_();
+    if (!t.tokAdmin || token !== t.tokAdmin) {
+      return _jsonOut_({ ok: false, error: 'Token Admin không hợp lệ.' });
+    }
+    try {
+      return _jsonOut_(seedMinhChungFromDefault());
+    } catch (err) {
+      return _jsonOut_({ ok: false, error: 'seedMinhChung lỗi: ' + (err.message || err) });
+    }
+  }
   if (_QLCL_TPL_ACTIONS.indexOf(action) >= 0) {
     // Build body từ query string (tương tự như doPost dùng JSON body)
     const body = (e && e.parameter) ? Object.assign({}, e.parameter) : {};
