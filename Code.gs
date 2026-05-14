@@ -1532,6 +1532,173 @@ function seedHSSDefault109() {
  *
  * KHÔNG đụng cột TT/Tên hồ sơ/Phân công/Mã KĐCL.
  */
+/**
+ * 🌱 SEED MINH CHỨNG — nạp 95 MC chuẩn (TT 17/2018 + TT 22/2024) vào tab MinhChung.
+ *
+ * Bối cảnh: setupAll() chỉ seed 31 dòng TIÊU CHÍ HEADER (TC1..TC5 + các tiêu chí
+ * 1.1, 1.2, ..., 5.4) chứ không seed MC. FE (app.js DEFAULT_MC_FULL) có sẵn
+ * 95 MC chuẩn để hiển thị khi Sheet trống, nhưng admin click "💾 Lưu lên Sheet"
+ * chỉ làm việc khi Sheet đã có ≥1 dòng MC để clear+rewrite (logic _writeMinhChung).
+ *
+ * Hàm này:
+ *   • Clear toàn bộ row 2 trở xuống (gồm 31 tiêu chí header + bất kỳ MC cũ).
+ *   • Ghi 95 MC chuẩn (cùng dữ liệu với DEFAULT_MC_FULL trong app.js).
+ *   • Sau khi chạy, mở Hồ sơ số → Admin → Minh chứng để chỉnh Số/ngày BH +
+ *     Nơi BH + Link Drive cho riêng trường, bấm 💾 Lưu lên Sheet.
+ *
+ * Idempotent. Có UI confirm khi chạy từ editor.
+ *
+ * Cách chạy: Apps Script editor → chọn `seedMinhChungFromDefault` → ▶ Run
+ */
+function seedMinhChungFromDefault() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error('Phải mở từ trong Google Sheet (Tiện ích mở rộng → Apps Script).');
+  const sh = ss.getSheetByName(SHEET_MC);
+  if (!sh) throw new Error('Không tìm thấy tab "' + SHEET_MC + '" — chạy setupAll trước.');
+
+  // 95 MC chuẩn TT 17/2018 + TT 22/2024 — đồng bộ với DEFAULT_MC_FULL trong app.js
+  // Format mỗi dòng: [STT, TC, Tiêu chí, Mã MC, Tên MC, Số/ngày BH, Nơi BH, Mã HSS, Link, Ghi chú]
+  const MC_ROWS = [
+    [1, 'TC1', '1.1', '[H1-1.1-01]', 'KH chiến lược phát triển nhà trường', '', '', '1.1.2', '', ''],
+    [2, 'TC1', '1.1', '[H1-1.1-02]', 'KH giáo dục nhà trường hàng năm', '', '', '1.1.1', '', ''],
+    [3, 'TC1', '1.1', '[H1-1.1-03]', 'NQ Đại hội Đảng bộ/Chi bộ về phát triển NT', '', '', '6.1', '', ''],
+    [4, 'TC1', '1.1', '[H1-1.1-04]', 'NQ Hội đồng trường về chiến lược phát triển', '', '', '1.2.1', '', ''],
+    [5, 'TC1', '1.1', '[H1-1.1-05]', 'BB rà soát chiến lược phát triển NT', '', '', '1.10.1', '', ''],
+    [6, 'TC1', '1.1', '[H1-1.1-06]', 'KH duy trì XD trường chuẩn Quốc gia', '', '', '1.1.3', '', ''],
+    [7, 'TC1', '1.1', '[H1-1.1-07]', 'BC tiến độ XD trường chuẩn Quốc gia', '', '', '1.10.3', '', ''],
+    [8, 'TC1', '1.1', '[H1-1.1-08]', 'BB họp HĐ trường, hội nghị VC-NLĐ', '', '', '1.7.3', '', ''],
+    [9, 'TC1', '1.1', '[H1-1.1-09]', 'BC sơ kết, tổng kết năm học', '', '', '1.10.1', '', ''],
+    [10, 'TC1', '1.2', '[H1-1.2-01]', 'QĐ thành lập Hội đồng trường', '', '', '1.4.2', '', ''],
+    [11, 'TC1', '1.2', '[H1-1.2-02]', 'QĐ thành lập HĐ TĐ-KT', '', '', '1.4.2', '', ''],
+    [12, 'TC1', '1.2', '[H1-1.2-03]', 'QĐ thành lập HĐ chấm SKKN', '', '', '1.4.2', '', ''],
+    [13, 'TC1', '1.2', '[H1-1.2-04]', 'NQ của Hội đồng trường', '', '', '1.2.2', '', ''],
+    [14, 'TC1', '1.2', '[H1-1.2-05]', 'BB họp các Hội đồng', '', '', '1.7.3', '', ''],
+    [15, 'TC1', '1.2', '[H1-1.2-06]', 'QC hoạt động Hội đồng trường', '', '', '1.3.3', '', ''],
+    [16, 'TC1', '1.3', '[H1-1.3-01]', 'NQ Chi bộ các tháng, năm', '', '', '6.1', '', ''],
+    [17, 'TC1', '1.3', '[H1-1.3-02]', 'BB họp Chi ủy, Chi bộ', '', '', '6.3', '', ''],
+    [18, 'TC1', '1.3', '[H1-1.3-03]', 'BC hoạt động Chi bộ', '', '', '6.4', '', ''],
+    [19, 'TC1', '1.3', '[H1-1.3-04]', 'KH hoạt động Công đoàn', '', '', '1.7.1', '', ''],
+    [20, 'TC1', '1.3', '[H1-1.3-05]', 'KH hoạt động Đội, Sao nhi đồng', '', '', '7.1', '', ''],
+    [21, 'TC1', '1.3', '[H1-1.3-06]', 'BB, BC hoạt động Đội', '', '', '7.2', '', ''],
+    [22, 'TC1', '1.4', '[H1-1.4-01]', 'QĐ bổ nhiệm HT, PHT', '', '', '1.4.1', '', ''],
+    [23, 'TC1', '1.4', '[H1-1.4-02]', 'QĐ thành lập Tổ CM, Tổ VP', '', '', '1.7.1', '', ''],
+    [24, 'TC1', '1.4', '[H1-1.4-03]', 'QĐ phân công nhiệm vụ CB, GV, NV', '', '', '1.4.1', '', ''],
+    [25, 'TC1', '1.4', '[H1-1.4-04]', 'Sơ đồ tổ chức nhà trường', '', '', '1.7.1', '', ''],
+    [26, 'TC1', '1.4', '[H1-1.4-05]', 'KH & BB sinh hoạt chuyên môn', '', '', '3.2.1', '', ''],
+    [27, 'TC1', '1.4', '[H1-1.4-06]', 'Sổ ghi chép hoạt động Tổ CM', '', '', '3.2.3', '', ''],
+    [28, 'TC1', '1.5', '[H1-1.5-01]', 'KH bồi dưỡng CMNV cho CB, GV, NV', '', '', '2.2.2', '', ''],
+    [29, 'TC1', '1.5', '[H1-1.5-02]', 'Hồ sơ phát động thi đua', '', '', '1.8.1', '', ''],
+    [30, 'TC1', '1.5', '[H1-1.5-03]', 'Hồ sơ xét khen thưởng GV, NV', '', '', '1.8.2', '', ''],
+    [31, 'TC1', '1.5', '[H1-1.5-04]', 'Hồ sơ SKKN', '', '', '1.8.4', '', ''],
+    [32, 'TC1', '1.5', '[H1-1.5-05]', 'QC TĐ-KT nội bộ', '', '', '1.3.2', '', ''],
+    [33, 'TC1', '1.5', '[H1-1.5-06]', 'KH kiểm tra nội bộ', '', '', '2.6.2', '', ''],
+    [34, 'TC1', '1.6', '[H1-1.6-01]', 'Sổ VB đến, VB đi', '', '', '4.1.1', '', ''],
+    [35, 'TC1', '1.6', '[H1-1.6-02]', 'QC chi tiêu nội bộ', '', '', '1.3.1', '', ''],
+    [36, 'TC1', '1.6', '[H1-1.6-03]', 'Công khai tài chính', '', '', '1.5.2', '', ''],
+    [37, 'TC1', '1.6', '[H1-1.6-04]', 'Dự toán, báo cáo quyết toán', '', '', '5.5', '', ''],
+    [38, 'TC1', '1.6', '[H1-1.6-05]', 'Sổ TSCĐ, sổ CC-DC', '', '', '1.6.2', '', ''],
+    [39, 'TC1', '1.6', '[H1-1.6-06]', 'BB kiểm kê tài sản', '', '', '1.6.4', '', ''],
+    [40, 'TC1', '1.6', '[H1-1.6-07]', 'QC dân chủ cơ sở', '', '', '1.3.1', '', ''],
+    [41, 'TC1', '1.6', '[H1-1.6-08]', 'Hồ sơ công khai theo TT36', '', '', '1.5.2', '', ''],
+    [42, 'TC2', '2.1', '[H2-2.1-01]', 'DS trích ngang CBGV-NV', '', '', '9.1.1', '', ''],
+    [43, 'TC2', '2.1', '[H2-2.1-02]', 'Hồ sơ viên chức & HĐLĐ', '', '', '1.7.2', '', ''],
+    [44, 'TC2', '2.1', '[H2-2.1-03]', 'Bảng tổng hợp trình độ GV', '', '', '9.1.1', '', ''],
+    [45, 'TC2', '2.1', '[H2-2.1-04]', 'BC thống kê đội ngũ', '', '', '1.10.2', '', ''],
+    [46, 'TC2', '2.2', '[H2-2.2-01]', 'KH bồi dưỡng thường xuyên', '', '', '2.2.2', '', ''],
+    [47, 'TC2', '2.2', '[H2-2.2-02]', 'Hồ sơ BDTX theo module', '', '', '9.1.3', '', ''],
+    [48, 'TC2', '2.2', '[H2-2.2-03]', 'Chứng chỉ, chứng nhận bồi dưỡng', '', '', '9.1.1', '', ''],
+    [49, 'TC2', '2.2', '[H2-2.2-04]', 'KH đào tạo nâng chuẩn GV', '', '', '2.2.2', '', ''],
+    [50, 'TC2', '2.3', '[H2-2.3-01]', 'Đánh giá CNN GV theo NĐ90', '', '', '9.1.2', '', ''],
+    [51, 'TC2', '2.3', '[H2-2.3-02]', 'Sổ dự giờ', '', '', '9.1.4', '', ''],
+    [52, 'TC2', '2.3', '[H2-2.3-03]', 'Hồ sơ thi GV dạy giỏi', '', '', '1.8.2', '', ''],
+    [53, 'TC2', '2.3', '[H2-2.3-04]', 'Kế hoạch bài dạy', '', '', '9.1.4', '', ''],
+    [54, 'TC2', '2.3', '[H2-2.3-05]', 'Hồ sơ SHCM theo NCBH', '', '', '3.2.1', '', ''],
+    [55, 'TC3', '3.1', '[H3-3.1-01]', 'Hồ sơ đất đai, XDCB', '', '', '1.6.1', '', ''],
+    [56, 'TC3', '3.1', '[H3-3.1-02]', 'Sơ đồ tổng thể khuôn viên NT', '', '', '1.6.1', '', ''],
+    [57, 'TC3', '3.1', '[H3-3.1-03]', 'KH mua sắm, sửa chữa CSVC', '', '', '1.5.3', '', ''],
+    [58, 'TC3', '3.1', '[H3-3.1-04]', 'BB kiểm tra CSVC, ANTH', '', '', '1.9.1', '', ''],
+    [59, 'TC3', '3.2', '[H3-3.2-01]', 'Danh mục phòng học, phòng CN', '', '', '1.6.2', '', ''],
+    [60, 'TC3', '3.2', '[H3-3.2-02]', 'BB bàn giao, cấp phát CSVC', '', '', '1.6.3', '', ''],
+    [61, 'TC3', '3.2', '[H3-3.2-03]', 'Hồ sơ PCCC, ANTH', '', '', '1.9.1', '', ''],
+    [62, 'TC3', '3.3', '[H3-3.3-01]', 'Hồ sơ thư viện, sổ sách TV', '', '', '4.2.1', '', ''],
+    [63, 'TC3', '3.3', '[H3-3.3-02]', 'Hồ sơ văn hóa đọc', '', '', '4.2.2', '', ''],
+    [64, 'TC3', '3.3', '[H3-3.3-03]', 'Danh mục TB dạy học, sổ mượn-trả', '', '', '4.3.1', '', ''],
+    [65, 'TC3', '3.3', '[H3-3.3-04]', 'KH mua sắm thiết bị', '', '', '4.3.2', '', ''],
+    [66, 'TC3', '3.3', '[H3-3.3-05]', 'Hồ sơ ứng dụng CNTT', '', '', '3.3.3', '', ''],
+    [67, 'TC4', '4.1', '[H4-4.1-01]', 'QĐ, QC Ban ĐDCMHS', '', '', '8.1.1', '', ''],
+    [68, 'TC4', '4.1', '[H4-4.1-02]', 'BB họp Ban ĐDCMHS', '', '', '8.1.2', '', ''],
+    [69, 'TC4', '4.1', '[H4-4.1-03]', 'KH phối hợp NT-GĐ', '', '', '8.1.2', '', ''],
+    [70, 'TC4', '4.2', '[H4-4.2-01]', 'Hồ sơ phối hợp ANTT, ATGT', '', '', '1.9.1', '', ''],
+    [71, 'TC4', '4.2', '[H4-4.2-02]', 'Hồ sơ phối hợp Y tế', '', '', '1.9.2', '', ''],
+    [72, 'TC4', '4.2', '[H4-4.2-03]', 'Hồ sơ phối hợp GD truyền thống', '', '', '1.9.3', '', ''],
+    [73, 'TC4', '4.2', '[H4-4.2-04]', 'Hồ sơ vận động XHH giáo dục', '', '', '1.9.3', '', ''],
+    [74, 'TC4', '4.2', '[H4-4.2-05]', 'Hồ sơ tham mưu cấp ủy, chính quyền', '', '', '1.9.3', '', ''],
+    [75, 'TC5', '5.1', '[H5-5.1-01]', 'KH dạy học theo CTGDPT 2018', '', '', '2.2.1', '', ''],
+    [76, 'TC5', '5.1', '[H5-5.1-02]', 'Thời khóa biểu, PC chuyên môn', '', '', '2.3.1', '', ''],
+    [77, 'TC5', '5.1', '[H5-5.1-03]', 'Sổ đăng bộ, học bạ HS', '', '', '2.1.1', '', ''],
+    [78, 'TC5', '5.1', '[H5-5.1-04]', 'KH môn học các khối', '', '', '3.1.1', '', ''],
+    [79, 'TC5', '5.1', '[H5-5.1-05]', 'Ma trận, đề KT định kỳ', '', '', '2.4.1', '', ''],
+    [80, 'TC5', '5.1', '[H5-5.1-06]', 'Tổng hợp KQGD', '', '', '2.4.2', '', ''],
+    [81, 'TC5', '5.1', '[H5-5.1-07]', 'Sổ Chủ nhiệm', '', '', '9.2.1', '', ''],
+    [82, 'TC5', '5.2', '[H5-5.2-01]', 'KH trải nghiệm, STEM, HĐNGLL', '', '', '2.2.3', '', ''],
+    [83, 'TC5', '5.2', '[H5-5.2-02]', 'KH GD địa phương', '', '', '2.2.5', '', ''],
+    [84, 'TC5', '5.2', '[H5-5.2-03]', 'Hình ảnh hoạt động NGLL', '', '', '7.3', '', ''],
+    [85, 'TC5', '5.2', '[H5-5.2-04]', 'Hồ sơ đổi mới PP, ứng dụng CNTT', '', '', '3.3.3', '', ''],
+    [86, 'TC5', '5.3', '[H5-5.3-01]', 'Tổng hợp KQ đánh giá HS', '', '', '2.4.2', '', ''],
+    [87, 'TC5', '5.3', '[H5-5.3-02]', 'DS khen thưởng HS', '', '', '2.4.3', '', ''],
+    [88, 'TC5', '5.3', '[H5-5.3-03]', 'Hồ sơ Hội thi HS giỏi', '', '', '2.4.2', '', ''],
+    [89, 'TC5', '5.3', '[H5-5.3-04]', 'KH phụ đạo HS chưa đạt, BD năng khiếu', '', '', '2.2.4', '', ''],
+    [90, 'TC5', '5.3', '[H5-5.3-05]', 'KH-VB Y tế, theo dõi SK HS', '', '', '4.4.1', '', ''],
+    [91, 'TC5', '5.4', '[H5-5.4-01]', 'VB chỉ đạo PCGD', '', '', '2.5.1', '', ''],
+    [92, 'TC5', '5.4', '[H5-5.4-02]', 'Hồ sơ PCGD (KH, BC, biểu mẫu)', '', '', '2.5.2', '', ''],
+    [93, 'TC5', '5.4', '[H5-5.4-03]', 'Sổ theo dõi HS chuyển đi/đến', '', '', '2.1.3', '', ''],
+    [94, 'TC5', '5.4', '[H5-5.4-04]', 'Hồ sơ HS khuyết tật hòa nhập', '', '', '2.1.4', '', ''],
+    [95, 'TC5', '5.4', '[H5-5.4-05]', 'Hồ sơ tuyển sinh vào lớp 1', '', '', '2.6.1', '', '']
+  ];
+
+  Logger.log('════════════════════════════════════════════════════════════════');
+  Logger.log('🌱 SEED MINH CHỨNG — 95 MC chuẩn TT 17/2018 + TT 22/2024');
+  Logger.log('════════════════════════════════════════════════════════════════');
+  const lastRow = sh.getLastRow();
+  const currentRows = Math.max(0, lastRow - 1);
+  Logger.log('Trước khi seed: ' + currentRows + ' dòng (gồm tiêu chí header + MC nếu có)');
+
+  // Xác nhận khi chạy từ editor
+  try {
+    const ui = SpreadsheetApp.getUi();
+    const resp = ui.alert('Seed Minh Chứng',
+      'Sẽ XOÁ ' + currentRows + ' dòng hiện có ở tab "' + SHEET_MC + '" và GHI 95 MC chuẩn.\n\n' +
+      'Sau khi seed, mở Hồ sơ số → Admin → Minh chứng để chỉnh Số/ngày + Nơi BH + Link Drive.\n\n' +
+      'Xác nhận?',
+      ui.ButtonSet.YES_NO);
+    if (resp !== ui.Button.YES) {
+      Logger.log('❌ Đã huỷ.');
+      return { ok: false, cancelled: true };
+    }
+  } catch (e) {
+    Logger.log('⚠ Không có UI context — chạy headless, tự xác nhận.');
+  }
+
+  // Clear data cũ (row 2 trở xuống), giữ header row 1
+  if (lastRow > 1) {
+    sh.getRange(2, 1, lastRow - 1, 10).clearContent();
+  }
+  // Ghi 95 MC mới
+  sh.getRange(2, 1, MC_ROWS.length, 10).setValues(MC_ROWS);
+
+  // Clear cache backend
+  try { CacheService.getScriptCache().remove('allData'); } catch(e) {}
+
+  Logger.log('✅ Đã seed ' + MC_ROWS.length + ' MC vào tab "' + SHEET_MC + '"');
+  Logger.log('Bước tiếp:');
+  Logger.log('  1. Mở Hồ sơ số (HSS) → Admin → Minh chứng');
+  Logger.log('  2. Chỉnh Số/ngày BH + Nơi BH + Link Drive cho từng MC');
+  Logger.log('  3. Bấm 💾 Lưu lên Sheet → MC đồng bộ');
+  Logger.log('════════════════════════════════════════════════════════════════');
+
+  return { ok: true, seeded: MC_ROWS.length };
+}
+
 function resetHssLinksForNewSchool() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('Phải mở từ trong Google Sheet (Tiện ích mở rộng → Apps Script).');
