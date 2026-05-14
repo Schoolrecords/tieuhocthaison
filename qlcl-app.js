@@ -3589,14 +3589,24 @@ function _buildHocBaData(s){
   var xa = 'Xã Đô Lương';
   var tinh = 'Tỉnh Nghệ An';
   var nam_hoc = '2025-2026';
-  // 2026-05-08: Hiệu trưởng — default "Nguyễn Thị Hòa" (đã có ở trang chủ Hồ sơ số)
-  var ht = localStorage.getItem('hieu_truong') || 'Nguyễn Thị Hòa';
+  // 2026-05-14: Hiệu trưởng — lấy động từ DSGV (cột Chức vụ = "Hiệu trưởng"),
+  // KHÔNG ghi cứng tên. Đổi HT chỉ cần sửa sheet DSGV, không phải sửa code.
+  var ht = _findHieuTruong() || localStorage.getItem('hieu_truong') || '';
   // 2026-05-08: GVCN lookup theo lớp HS
-  // Ưu tiên: nx.gvcn (admin nhập riêng) → allUsers.find(lop_phu_trach) → ''
+  // Ưu tiên: nx.gvcn (admin nhập riêng) → Users.lop_phu_trach → danh sách chữ ký GVCN
+  // 2026-05-14: lop_phu_trach có thể chứa nhiều lớp ("1A,1B") → tách dấu phẩy khi so khớp
   var gvcn = nx.gvcn || '';
+  var sLop = (s.lop || '').trim();
+  function _lopKhop(raw){
+    return String(raw || '').split(',').some(function(x){ return x.trim() === sLop; });
+  }
   if (!gvcn && typeof allUsers !== 'undefined' && allUsers && allUsers.length) {
-    var t = allUsers.find(function(u){ return u && u.lop_phu_trach && u.lop_phu_trach.trim() === (s.lop || '').trim(); });
+    var t = allUsers.find(function(u){ return u && u.lop_phu_trach && _lopKhop(u.lop_phu_trach); });
     if (t) gvcn = t.hoten || '';
+  }
+  if (!gvcn && _sigList && Array.isArray(_sigList.gvcn)) {
+    var gvSig = _sigList.gvcn.find(function(g){ return g && _lopKhop(g.lop); });
+    if (gvSig) gvcn = gvSig.hoTen || '';
   }
   var now = new Date();
   var mucDatMap = {HTT:'T', HT:'Đ', CHT:'C'};
@@ -3771,6 +3781,26 @@ async function _ensureAllUsers(){
   } catch(e) { /* lỗi mạng — bỏ qua, GVCN sẽ trống */ }
 }
 
+// 2026-05-14: cache DSGV để tra tên Hiệu trưởng cho học bạ (cột Chức vụ)
+var _allTeachers = null;
+async function _ensureTeachers(){
+  if (_allTeachers && _allTeachers.length) return;
+  if (!GAS) return; // không có GAS thì bỏ qua, tên HT sẽ trống
+  try {
+    var r = await gasCall({action:'teachers'});
+    if (r && r.ok && Array.isArray(r.data)) _allTeachers = r.data;
+  } catch(e) { /* lỗi mạng — bỏ qua */ }
+}
+// Tìm tên Hiệu trưởng từ DSGV — loại trừ "Phó Hiệu trưởng".
+function _findHieuTruong(){
+  if (!_allTeachers || !_allTeachers.length) return '';
+  var ht = _allTeachers.find(function(t){
+    var rv = String(t && t.role || '').toLowerCase().trim();
+    return rv === 'hiệu trưởng' || (rv.indexOf('hiệu trưởng') >= 0 && rv.indexOf('phó') < 0);
+  });
+  return ht ? (ht.name || '') : '';
+}
+
 // 2026-05-09: cache list chữ ký + cache binary ảnh (ArrayBuffer) — TTL 5 phút.
 var _sigList = null, _sigListAt = 0;
 var _sigImgCache = {};
@@ -3836,6 +3866,8 @@ async function _genHocBaDocx(s){
   if (typeof window.docxtemplater === 'undefined') throw new Error('Thiếu thư viện docxtemplater — kiểm tra CDN');
 
   await _ensureAllUsers();
+  await _ensureTeachers();   // 2026-05-14: cần DSGV để tra tên Hiệu trưởng
+  await _ensureSigList();    // 2026-05-14: cần list chữ ký GVCN làm fallback tra tên GVCN
 
   var khoi = parseInt(s.khoi) || 1;
   if (khoi < 1 || khoi > 5) khoi = 1;
