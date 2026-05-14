@@ -41,7 +41,7 @@
 // └──────────────────────────────────────────────────────────┘
 var APP_VERSION='3.2';
 // ★★★ URL Web App HSS (dùng chung với index.html — 1 Sheet, 1 Apps Script) ★★★
-var DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbxS-M_WE3zkT7gR5kIuyka1DOOpGfgPCJInnpplpsik_RRfBQ6ULUDA9l8xlTVNgU_y/exec';
+var DEFAULT_GAS = 'https://script.google.com/macros/s/AKfycbz77YHbIlmMHasWjKaDRfXCU1rS6oHLJHQqaOlB6yAxJeURDEILBTQPllCtylcVp1VK/exec';
 
 // 2026-05-07: DSHS không còn inline — fetch real-time từ HSS qua action 'students'.
 //   Single source of truth = Sheet "DS HocSinh" (HSS module).
