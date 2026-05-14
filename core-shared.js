@@ -353,9 +353,10 @@
      • Đoạn IIFE Early Fetch trong <head> ghi `window.__earlyData`
    ─────────────────────────────────────────────────────────────────────── */
 
-  // ⭐ CACHE giữ nguyên key cũ 'thMau_data' — backwards-compat với localStorage
-  // mà người dùng đã có sẵn từ phiên bản cũ (không phải xoá dữ liệu).
-  const CACHE_KEY = 'thMau_data';
+  // ⭐ CACHE — 2026-05-14: bump 'thMau_data' → 'thMau_data_thaison_v2' để invalidate
+  // localStorage cũ trên các máy đã từng truy cập template Diễn Liên (DSHS/MC/IMAGES
+  // cũ vẫn còn cache, gây UI hiển thị nhầm tên HS Diễn Liên dù backend đã trỏ đúng Thái Sơn).
+  const CACHE_KEY = 'thMau_data_thaison_v2';
   const CACHE_TTL = 10 * 60 * 1000; // 10 phút (giữ để tương lai có thể bật check TTL)
 
   function loadError(msg){

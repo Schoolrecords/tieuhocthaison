@@ -15,6 +15,32 @@
 3. Verify: `curl "WEB_APP_URL?action=getHSS"` → tất cả `link` trong JSON phải = `""`
 4. Mở Admin web → Hồ sơ số → paste link Drive Thái Sơn cho từng hồ sơ khi cần
 
+## 🧹 BUMP CACHE VERSION — invalidate localStorage Diễn Liên cũ (2026-05-14)
+
+Bug đã thấy: trên máy đã từng truy cập phiên bản template Diễn Liên, QLCL/HSS hiển thị HS Diễn Liên dù backend đã trỏ đúng Spreadsheet "HSS Thái Sơn 2025-2026" (xác minh qua `?action=status` → API trả ~710 HS Thái Sơn). Nguyên nhân: `localStorage` cache cũ chưa expire.
+
+**Cách phát hiện**: số HS trên UI ≠ số HS thực tế trên Sheet. Toast "Đã cập nhật DSHS — N học sinh" với N quá to/quá nhỏ so với Sheet.
+
+**Đã sửa code**: bump 2 cache key
+- `_DSHS_CACHE_KEY`: `qlcl_sb_v7` → `qlcl_sb_v8_thaison` (qlcl-app.js)
+- `CACHE_KEY`: `thMau_data` → `thMau_data_thaison_v2` (core-shared.js)
+
+Sau khi deploy + đẩy GitHub Pages, mọi máy load lại → tự dùng key mới → cache cũ bị bỏ qua → fetch fresh từ backend.
+
+**Nếu thầy muốn fix nhanh từng máy** (không cần đợi deploy): F12 Console → `localStorage.clear()` → reload.
+
+---
+
+## 🔑 Phân biệt 3 cơ chế mật khẩu (đừng nhầm)
+
+| Module | Lưu password ở đâu | Cách đổi |
+|---|---|---|
+| HSS (`index.html`) | Google Sheet tab `Users` | Sửa trực tiếp ô `password` trên Sheet |
+| QLCL (`qlcl.html`) | **Cùng tab `Users`** (SSO) | Sửa trực tiếp ô `password` trên Sheet |
+| KĐCL (`kdcl.html`) | `localStorage` của máy admin (SHA-256) | Vào KĐCL → ⋯ → Đổi mật khẩu admin |
+
+→ KĐCL **không liên quan** Sheet Users. Khi cài máy mới, KĐCL hỏi đặt mật khẩu riêng (chỉ bảo vệ báo cáo trên máy đó, vì dữ liệu KĐCL ở localStorage).
+
 ## Đã thay thế tự động (script)
 - Tên trường, địa danh: `Diễn Liên` → `Thái Sơn`, `Quảng Châu` → `Đô Lương`
 - Slug, đường dẫn: `tieuhocdienlien` → `tieuhocthaison`, `THDienLien` → `THThaiSon`, `THDL` → `THTS`

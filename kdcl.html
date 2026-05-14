@@ -6140,6 +6140,7 @@ function LoginModal({ schoolName, onSuccess, onGuest, onClose }) {
             </button>
           </div>
           <div style={{marginTop:14,fontSize:11.5,color:'var(--faint)',textAlign:'center',lineHeight:1.6}}>
+            🔑 Đây là mật khẩu RIÊNG của KĐCL (lưu trong báo cáo này), <b>KHÔNG</b> phải password Hồ sơ số / QLCL.<br/>
             Quên mật khẩu? Liên hệ Thư ký / Hiệu trưởng của trường.<br/>
             Vào chế độ xem không cần mật khẩu nhưng không sửa được dữ liệu.
           </div>
@@ -6202,9 +6203,15 @@ function PasswordSetupModal({ currentHash, onSave, onClose }) {
         <div className="modal-b">
           {err && <div className="login-err" style={{marginBottom:12}}>{err}</div>}
           {!isChanging && (
-            <div style={{padding:11,background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,fontSize:12.5,color:'#1e40af',lineHeight:1.6,marginBottom:14}}>
-              💡 Đặt mật khẩu để chỉ <b>Hiệu trưởng / Thư ký</b> mới sửa được báo cáo. Các thành viên khác chỉ xem. Mật khẩu lưu dưới dạng hash SHA-256 trong báo cáo — không ai (kể cả lập trình viên) đọc được mật khẩu thô.
-            </div>
+            <>
+              <div style={{padding:11,background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,fontSize:12.5,color:'#1e40af',lineHeight:1.6,marginBottom:10}}>
+                💡 Đặt mật khẩu để chỉ <b>Hiệu trưởng / Thư ký</b> mới sửa được báo cáo. Các thành viên khác chỉ xem. Mật khẩu lưu dưới dạng hash SHA-256 trong báo cáo — không ai (kể cả lập trình viên) đọc được mật khẩu thô.
+              </div>
+              <div style={{padding:10,background:'#fef3c7',border:'1px solid #fde68a',borderRadius:8,fontSize:12,color:'#92400e',lineHeight:1.6,marginBottom:14}}>
+                🔑 <b>Mật khẩu KĐCL là RIÊNG — KHÔNG dùng password của Hồ sơ số / QLCL.</b><br/>
+                KĐCL bảo vệ báo cáo TĐG đang soạn ở máy này (lưu trong trình duyệt). HSS &amp; QLCL dùng tài khoản tập trung từ tab <b>Users</b> trên Google Sheet (SSO toàn trường).
+              </div>
+            </>
           )}
           {isChanging && (
             <div className="field">
