@@ -1741,6 +1741,49 @@ function seedMinhChungFromDefault() {
   // Verify: đọc lại số row đã ghi
   const verifyRow = sh.getLastRow();
   const writtenRows = Math.max(0, verifyRow - 1);
+
+  // 2026-05-14: REPAIR PHASE — Sau setValues bulk, Sheet template Diễn Liên đôi khi
+  // bỏ sót 1 vài row do MERGED CELLS kế thừa (cell con của merge không nhận setValues).
+  // Đã verify: row 36 (STT 35 H1-1.6-02) có 1 merged range → cần break apart trước
+  // khi ghi lại. Đoạn này quét toàn bộ row, repair những row có col D rỗng.
+  const repairInfo = { repaired: 0, mergeRangesFound: 0, hiddenRowsFound: 0 };
+  try {
+    // Loại bỏ Protected Ranges trên sheet (nếu có) — không liên quan trực tiếp nhưng
+    // có thể gây thất bại cell write trong tương lai.
+    const protections = sh.getProtections(SpreadsheetApp.ProtectionType.RANGE);
+    protections.forEach(function(p){ try { p.remove(); } catch (e) {} });
+
+    const rawData = sh.getRange(2, 1, writtenRows, 10).getValues();
+    rawData.forEach(function(r, i) {
+      if (!r[3] && MC_ROWS[i] && MC_ROWS[i][3]) {
+        const sheetRow = i + 2;
+        try {
+          // Break merged ranges trên cell D nếu có
+          const merged = sh.getRange(sheetRow, 4).getMergedRanges();
+          if (merged && merged.length) {
+            repairInfo.mergeRangesFound += merged.length;
+            merged.forEach(function(mr){ mr.breakApart(); });
+          }
+          // Unhide row nếu bị hide
+          if (sh.isRowHiddenByUser(sheetRow)) {
+            repairInfo.hiddenRowsFound++;
+            sh.showRows(sheetRow);
+          }
+          // Delete + insert lại row để xoá mọi artifact (merge/format/validation)
+          sh.deleteRow(sheetRow);
+          sh.insertRowBefore(sheetRow);
+          sh.getRange(sheetRow, 1, 1, 10).setValues([MC_ROWS[i]]);
+          repairInfo.repaired++;
+        } catch (e) {
+          Logger.log('  ❌ Repair row ' + sheetRow + ' fail: ' + e.message);
+        }
+      }
+    });
+    if (repairInfo.repaired > 0) {
+      Logger.log('🔧 REPAIR: ' + repairInfo.repaired + ' row, ' + repairInfo.mergeRangesFound + ' merged range broken, ' + repairInfo.hiddenRowsFound + ' hidden row showed');
+    }
+  } catch (e) { Logger.log('⚠ Repair phase fail: ' + e.message); }
+
   Logger.log('✅ Đã seed ' + MC_ROWS.length + ' MC, sheet hiện có ' + writtenRows + ' row data.');
   Logger.log('   🔗 ' + linkedCount + ' MC đã gắn link Drive từ Danh muc HSS.');
   Logger.log('Bước tiếp:');
@@ -1749,7 +1792,7 @@ function seedMinhChungFromDefault() {
   Logger.log('  3. Bấm 💾 Lưu lên Sheet → MC đồng bộ');
   Logger.log('════════════════════════════════════════════════════════════════');
 
-  return { ok: true, seeded: MC_ROWS.length, linked: linkedCount, writtenRows: writtenRows };
+  return { ok: true, seeded: MC_ROWS.length, linked: linkedCount, writtenRows: writtenRows, repair: repairInfo };
 }
 
 function resetHssLinksForNewSchool() {
