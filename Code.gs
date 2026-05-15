@@ -1168,7 +1168,7 @@ function _auditLog(tab, entry) {
 /**
  * =====================================================================================
  *  HỒ SƠ SỐ - TRƯỜNG TIỂU HỌC (Mặc định: Trường Tiểu học Thái Sơn)
- *  Địa chỉ mẫu: Xã Đô Lương, Tỉnh Nghệ An
+ *  Địa chỉ mẫu: Xã Văn Hiến, Tỉnh Nghệ An
  *  Backend API: Google Apps Script (Container-bound)
  *
  *  💡 TEMPLATE NOTE: File này là template DÙNG CHUNG cho mọi trường tiểu học.
@@ -1203,7 +1203,7 @@ function _auditLog(tab, entry) {
 // Các giá trị dưới đây CHỈ dùng khi sheet CauHinh chưa được điền.
 const SCHOOL_CONFIG = {
   name:           'Trường Tiểu học Thái Sơn',
-  address:        'Xã Đô Lương, Tỉnh Nghệ An',
+  address:        'Xã Văn Hiến, Tỉnh Nghệ An',
   phone:          '',
   email:          '',
   schoolYear:     '2025 - 2026',
@@ -3628,7 +3628,7 @@ function setupDbcl() {
     [13, 'Kế hoạch Đảm bảo Chất lượng 2025-2026',               'plan',     ''],
     [14, 'Dự toán kinh phí ĐBCL (9,7 triệu)',                   'budget',   ''],
     [15, 'Bản cam kết GV chủ nhiệm + GV chuyên (2 mẫu)',        'commit',   ''],
-    [16, 'Bản cam kết HT với UBND xã Đô Lương',               'commit',   '']
+    [16, 'Bản cam kết HT với UBND xã Văn Hiến',               'commit',   '']
   ];
 
   var shPl = ss.getSheetByName(SHEET_DBCL_PHULUC);

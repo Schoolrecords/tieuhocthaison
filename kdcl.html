@@ -4657,7 +4657,7 @@ function HelpSchool({ setModal, onClose }) {
       <ul>
         <li>Tên trường: nhập đầy đủ gồm "Trường". VD: <code>Trường Tiểu học Thái Sơn</code></li>
         <li>Địa chỉ cụ thể: thôn/xóm/đường (không cần xã vì đã có field riêng)</li>
-        <li>Xã/Phường: VD <code>Xã Đô Lương</code> — <b>KHÔNG điền huyện</b></li>
+        <li>Xã/Phường: VD <code>Xã Văn Hiến</code> — <b>KHÔNG điền huyện</b></li>
         <li>Mức đánh giá đăng ký: 1 (tối thiểu) · 2 (cấp độ 2) · 3 (chuẩn QG Mức 1) · 4 (chuẩn QG Mức 2)</li>
         <li>Quy mô: Số lớp, HS, GV, NV năm hiện tại</li>
         <li>Tick "Vùng khó khăn" nếu trường thuộc xã đặc biệt khó khăn (ảnh hưởng tỷ lệ % của Tiêu chí 2.2 và 5.5)</li>
@@ -5755,7 +5755,7 @@ function SchoolInfoModal({ schoolInfo, onSave, onClose }) {
               <input value={info.address} onChange={e => upd('address', e.target.value)} placeholder="Thôn/xóm, đường (nếu có)"/>
             </div>
             <div className="field"><label>Xã/Phường <span className="req">*</span></label>
-              <input value={info.ward} onChange={e => upd('ward', e.target.value)} placeholder="VD: Xã Đô Lương"/>
+              <input value={info.ward} onChange={e => upd('ward', e.target.value)} placeholder="VD: Xã Văn Hiến"/>
             </div>
           </div>
           <div className="grid3">

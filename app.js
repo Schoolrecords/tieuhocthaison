@@ -1703,7 +1703,7 @@
     // Cập nhật mô tả với thông tin thật
     var cfg = STATS.config || {};
     var name = cfg.name || 'Trường Tiểu học Thái Sơn';
-    var addr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
+    var addr = cfg.address || 'Xã Văn Hiến, Tỉnh Nghệ An';
     var tcCount = STATS.totalTeachers || 0;
     document.getElementById('aboutDesc1').textContent = name + ' tọa lạc tại ' + addr + '. Trường luôn nỗ lực xây dựng môi trường giáo dục an toàn, thân thiện, hiệu quả.';
     if(tcCount) document.getElementById('aboutDesc2').textContent = 'Với đội ngũ ' + tcCount + ' CB,GV,NV tận tâm, nhà trường cam kết mang đến chương trình giáo dục chất lượng cao theo CTGDPT 2018.';
@@ -2546,7 +2546,7 @@
   function _buildStyledHSSheet(){
     var cfg = (window.STATS && STATS.config) || {};
     var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC THÁI SƠN';
-    var schoolAddr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
+    var schoolAddr = cfg.address || 'Xã Văn Hiến, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['STT','Mã lớp','Mã HS','Họ và tên','Ngày sinh','Giới tính',
                    'Dân tộc','Tôn giáo','Tỉnh/TP','','Xã/Phường','Tổ/Thôn/Xóm',
@@ -2615,9 +2615,9 @@
     } else {
       // Mẫu trống — tạo 3 hàng demo để admin biết format
       var demos = [
-        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 5', 'Đô Lương, Nghệ An', '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
-        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 3', 'Đô Lương, Nghệ An', '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
-        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Đô Lương', 'Xóm 7', 'Đô Lương, Nghệ An', '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
+        [1, '1A', 'HS001', 'Nguyễn Văn A',  '15/03/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Văn Hiến', 'Xóm 5', 'Văn Hiến, Nghệ An', '0901234567', 'Nguyễn Văn B', '1985', 'Trần Thị C', '1987', 'Đang học'],
+        [2, '1A', 'HS002', 'Trần Thị B',    '22/07/2018', 'Nữ',  'Kinh', '', 'Nghệ An', '', 'Văn Hiến', 'Xóm 3', 'Văn Hiến, Nghệ An', '0912345678', 'Trần Văn D', '1983', 'Lê Thị E',  '1986', 'Đang học'],
+        [3, '1B', 'HS003', 'Lê Hoàng C',    '10/11/2018', 'Nam', 'Kinh', '', 'Nghệ An', '', 'Văn Hiến', 'Xóm 7', 'Văn Hiến, Nghệ An', '',           'Lê Văn F',   '1984', 'Phạm Thị G','1988', 'Đang học']
       ];
       demos.forEach(function(rowVals, idx){
         var isAlt = (idx % 2 === 1);
@@ -2686,7 +2686,7 @@
   function _buildStyledGVSheet(){
     var cfg = (window.STATS && STATS.config) || {};
     var schoolName = cfg.name || 'TRƯỜNG TIỂU HỌC THÁI SƠN';
-    var schoolAddr = cfg.address || 'Xã Đô Lương, Tỉnh Nghệ An';
+    var schoolAddr = cfg.address || 'Xã Văn Hiến, Tỉnh Nghệ An';
     var schoolYear = cfg.schoolYear || '2025-2026';
     var headers = ['TT','Họ và tên','Ngày sinh','Chức vụ','Trình độ','SĐT','Gmail','Link hồ sơ'];
     var COL_COUNT = headers.length;  // 8

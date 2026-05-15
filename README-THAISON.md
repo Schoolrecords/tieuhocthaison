@@ -3,7 +3,7 @@
 ## Trạng thái
 - **Clone từ**: thư mục `THDienLien` (TH Diễn Liên)
 - **Ngày clone**: 2026-05-13
-- **Đơn vị áp dụng**: Trường Tiểu học Thái Sơn, xã Đô Lương, tỉnh Nghệ An
+- **Đơn vị áp dụng**: Trường Tiểu học Thái Sơn, xã Văn Hiến, tỉnh Nghệ An
 - **Năm học**: 2025-2026
 
 ## 🚨 HOTFIX BẮT BUỘC CHẠY SAU DEPLOY (2026-05-13)

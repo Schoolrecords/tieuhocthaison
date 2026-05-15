@@ -72,14 +72,14 @@
     {num:13, name:'Kế hoạch Đảm bảo Chất lượng 2025-2026', type:'plan'},
     {num:14, name:'Dự toán kinh phí ĐBCL (9,7 triệu)', type:'budget'},
     {num:15, name:'Bản cam kết GV chủ nhiệm + GV chuyên (2 mẫu)', type:'commit'},
-    {num:16, name:'Bản cam kết HT với UBND xã Đô Lương', type:'commit'}
+    {num:16, name:'Bản cam kết HT với UBND xã Văn Hiến', type:'commit'}
   ];
 
   // 4 loại cam kết chất lượng (theo Phụ lục 15a, 15b, 16 + thực tế trường)
   const CAM_KET = [
     {icon:'📝', from:'Giáo viên',          to:'Hiệu trưởng',                   desc:'GV cam kết chỉ tiêu chất lượng môn dạy / lớp chủ nhiệm với HT đầu năm học. Có 2 mẫu: GVCN (Phụ lục 15a) và GV chuyên (Phụ lục 15b).', color:'#0c5da5', plPath:'15a + 15b'},
     {icon:'🤝', from:'Giáo viên Chủ nhiệm', to:'Đại diện CMHS lớp',             desc:'GVCN cam kết chỉ tiêu chất lượng lớp với Ban đại diện CMHS lớp tại buổi họp PH đầu năm.', color:'#16a34a', plPath:'(chưa có mẫu — sẽ bổ sung)'},
-    {icon:'📋', from:'Hiệu trưởng',         to:'UBND xã Đô Lương (cấp QL)',   desc:'HT cam kết chỉ tiêu chất lượng nhà trường với UBND xã đầu năm học (Phụ lục 16). Bao gồm chỉ số học tập, GV, CSVC, khen thưởng.', color:'#c79a2a', plPath:'16'},
+    {icon:'📋', from:'Hiệu trưởng',         to:'UBND xã Văn Hiến (cấp QL)',   desc:'HT cam kết chỉ tiêu chất lượng nhà trường với UBND xã đầu năm học (Phụ lục 16). Bao gồm chỉ số học tập, GV, CSVC, khen thưởng.', color:'#c79a2a', plPath:'16'},
     {icon:'🏫', from:'Nhà trường',         to:'Ban đại diện CMHS trường',      desc:'Trường ký cam kết tổng hợp với Ban đại diện CMHS toàn trường tại Hội nghị đầu năm.', color:'#7c3aed', plPath:'(BB Hội nghị)'}
   ];
 

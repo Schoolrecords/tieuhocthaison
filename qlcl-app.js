@@ -3231,8 +3231,8 @@ function openHB(idx){
   h+=_liInp('hb_so_dang_bo',  'Sổ đăng bộ',           llSoDB,    'VD: 671/2024');
   h+=_liInp('hb_ngay_nhap_hoc','Ngày nhập học',       llNNH,     'dd/mm/yyyy');
   h+=_liInp('hb_noi_sinh',    'Nơi sinh',             llNoiSinh, 'VD: BV Hữu nghị Đa khoa Nghệ An', s.noi_sinh || '');
-  h+=_liInp('hb_que_quan',    'Quê quán',             llQueQuan, 'VD: Xã Đô Lương, tỉnh Nghệ An', s.que_quan || '');
-  h+=_liInp('hb_noi_o',       'Nơi ở hiện nay',       llNoiO,    'VD: Xóm 6, xã Đô Lương...',     s.cho_o || '');
+  h+=_liInp('hb_que_quan',    'Quê quán',             llQueQuan, 'VD: Xã Văn Hiến, tỉnh Nghệ An', s.que_quan || '');
+  h+=_liInp('hb_noi_o',       'Nơi ở hiện nay',       llNoiO,    'VD: Xóm 6, xã Văn Hiến...',     s.cho_o || '');
   h+=_liInp('hb_giam_ho',     'Người giám hộ (nếu có)', llGiamHo, '');
   h+=_liInp('hb_ho_cha',      'Họ và tên cha',        llCha,     '', s.cha || '');
   h+=_liInp('hb_ho_me',       'Họ và tên mẹ',         llMe,      '', s.me || '');
@@ -3586,7 +3586,7 @@ function _buildHocBaData(s){
   var k = parseInt(s.khoi);
   var sj = (SUBJ[String(k)] || SUBJ['1']).filter(function(x){ return x[1] !== 'mon_Tiếng_dân_tộc'; });
   var school = localStorage.getItem('school_name_full') || 'Trường Tiểu học Thái Sơn';
-  var xa = 'Xã Đô Lương';
+  var xa = 'Xã Văn Hiến';
   var tinh = 'Tỉnh Nghệ An';
   var nam_hoc = '2025-2026';
   // 2026-05-14: Hiệu trưởng — lấy động từ DSGV (cột Chức vụ = "Hiệu trưởng"),
@@ -3945,7 +3945,7 @@ function _renderHocBa1HS(s, showCover){
   var k=parseInt(s.khoi), sj=(SUBJ[String(k)]||SUBJ['1']).filter(function(x){return x[1]!=='mon_Tiếng_dân_tộc';});
   var school=localStorage.getItem('school_name_full')||'Trường Tiểu học Thái Sơn';
   // 2026-05-07: Cải cách hành chính 2 cấp — bỏ huyện. Chỉ còn xã + tỉnh.
-  var xa='Xã Đô Lương', tinh='Tỉnh Nghệ An';
+  var xa='Xã Văn Hiến', tinh='Tỉnh Nghệ An';
   var namHoc='2025-2026';
   var ht=localStorage.getItem('hieu_truong')||'';
   var gvcn=nx.gvcn||'';
@@ -4330,7 +4330,7 @@ function hbExportExcel(){
 // ═══════════════════════════════════════════════════════════════
 function expBangCLWord(){
   var school=localStorage.getItem('school_name_full')||'Trường Tiểu học Thái Sơn';
-  var addr=localStorage.getItem('school_addr')||'Xã Đô Lương, Tỉnh Nghệ An';
+  var addr=localStorage.getItem('school_addr')||'Xã Văn Hiến, Tỉnh Nghệ An';
   var periodName=_rptPeriodName();
   var ht=localStorage.getItem('hieu_truong')||'';
   var now=new Date();

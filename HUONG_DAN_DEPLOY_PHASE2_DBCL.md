@@ -49,7 +49,7 @@ Mở Google Sheet đang dùng (`THThaiSon_05.2026.gsheet`) → tạo 2 tab mới
 | 13 | Kế hoạch Đảm bảo Chất lượng 2025-2026 | plan | |
 | 14 | Dự toán kinh phí ĐBCL (9,7 triệu) | budget | |
 | 15 | Bản cam kết GV chủ nhiệm + GV chuyên (2 mẫu) | commit | |
-| 16 | Bản cam kết HT với UBND xã Đô Lương | commit | |
+| 16 | Bản cam kết HT với UBND xã Văn Hiến | commit | |
 
 > **Loại hợp lệ**: `data` · `standard` · `plan` · `survey` · `decision` · `cover` · `budget` · `commit` (FE hiển thị badge màu khác nhau)
 > **Link Drive**: Để trống nếu chưa upload — FE sẽ alert hướng dẫn. Khi có link → click "📂" mở thẳng.
