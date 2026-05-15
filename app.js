@@ -1491,7 +1491,7 @@
       + bodyHtml
       + '<div class="sign-section">'
       + '<div class="sign-block right">'
-      + '<div style="font-style:italic;margin-bottom:8pt">Đô Lương, ' + dateStr + '</div>'
+      + '<div style="font-style:italic;margin-bottom:8pt">Thái Sơn, ' + dateStr + '</div>'
       + '<div class="sign-role">HIỆU TRƯỞNG</div>'
       + '<div class="sign-note">(Ký, ghi rõ họ tên, đóng dấu)</div>'
       + '<div class="sign-name">&nbsp;</div>'
