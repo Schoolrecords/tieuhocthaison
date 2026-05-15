@@ -71,6 +71,9 @@ File mẫu: FlieMau-KQHT-C1-CN-Khoi12-TT27_2020.xls
 | AI | 34 | (trống) | |
 
 ## Quy tắc quan trọng
+- **Tên trường**: Trường Tiểu học Thái Sơn
+- **Xã hành chính**: Đô Lương · **Tỉnh**: Nghệ An
+- **Địa danh ký văn bản**: `"Thái Sơn,"` (KHÔNG dùng xã hành chính `"Đô Lương,"` sau sáp nhập). Áp dụng cho mọi văn bản: học bạ, báo cáo chất lượng, công văn, biên bản. Xem `app.js:renderCatalogOverview` (chữ ký bìa tổng quan HSS) + `qlcl-app.js:_renderHocBa1HS` (chữ ký học bạ).
 - KHÔNG ghi "Phòng GD&ĐT" — Việt Nam đã bỏ cấp huyện (2 cấp: tỉnh-xã)
 - Dùng "Sở GD&ĐT Nghệ An" hoặc tên trường trực tiếp
 - Môn học: T = Hoàn thành tốt, H = Hoàn thành, C = Chưa hoàn thành
